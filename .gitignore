@@ -1,6 +1,7 @@
 # Control de Privacidad
 /*
 !.gitignore
+!README.md
 !/Practica/
 /Practica/*
 !/Practica/tp*/
