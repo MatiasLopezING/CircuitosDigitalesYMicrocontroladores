@@ -77,11 +77,11 @@ int main(void)
     DDRD = 0xFF; // DDRD = 0b11111111; // Configura PORTD como salida
     PORTD = 0x00; // Apagar todos los LEDs al inicio
     
-    // Configurar PORTC0 y PORTC1 como entradas para los pulsadores [cite: 342]
+    // Configurar PORTC0 y PORTC1 como entradas para los pulsadores
     DDRC &= ~((1 << PINC0) | (1 << PINC1));  //Anexo1
     PORTC |= (1 << PINC0) | (1 << PINC1); // Anexo2
     
-    // Variables del sistema (Usamos variables locales de 8-bits para optimizar SRAM y velocidad) [cite: 95, 100, 198]
+    // Variables del sistema (Usamos variables locales de 8-bits para optimizar SRAM y velocidad)
     uint8_t tick_50ms = 0;
     
     // Variables de estado para el Inciso 1
