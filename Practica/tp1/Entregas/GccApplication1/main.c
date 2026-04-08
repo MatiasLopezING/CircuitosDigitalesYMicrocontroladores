@@ -1,45 +1,73 @@
 #include <avr/io.h>
+#define F_CPU 16000000UL
+#include <util/delay.h>
+#define MSB 7
+#define LSB 0
 
 void secuenciaA();
 void secuenciaB();
 void secuenciaC();
 void secuenciaD();
+void configurarPuertos();
 
-uint8_t ledSec1,subiendo;
+uint8_t ledSec1=LSB; //La secuencia 1 comienza con el LSB
+uint8_t subiendo=0; //La secuencia 2 comienza desde el MSB hacia el LSB
 
 int main(void)
 {
-	
-	uint8_t contadorSec1, contadorSec2,estAct1,estAct2;
+	uint8_t contadorSec1 = 0;
+	uint8_t contadorSec2 = 0;
+	uint8_t estAct1=0;
+	uint8_t estAct2=0;
+	uint8_t botonAnt1;
+	uint8_t botonAnt2;
 	//Se puede optimizar aun mas el tema de los estados utilizando una sola variable con 1 bit por secuencia!
+	configurarPuertos();
+	
     while (1) 
     {
-		_delay_ms(50); //Cada 50 ms chequeo 
+		botonAnt1= PINC & (1 << PINC0); //Guardo estado del boton de la secuencia 1
+		botonAnt2= PINC & (1 << PINC1); //Guardo estado del boton de la secuencia 2
+		
+		//Ventana de tiempo 
+		_delay_ms(50); 
+		
+		//Incremento el contador de ambas secuencias que corren en simultaneo
 		contadorSec1++; 
 		contadorSec2++;
-		//Incremento el contador de ambas secuencias que corren en simultaneo
 		
-		if ( (PINC & (1 << PINC0)) ==1 ) //Chequeo cambio de estado de la secuencia 1. ACA HAY QUE VER EL TEMA DE QUE NO QUEDE PULSADO MUCHO TIEMPO Y SE QUEDE ALTERNANDO
-			if (estAct1==1) //Actualizo la secuencia 1 (A o B)
+		//Chequeo si se presiono el boton para cambiar la secuencia 1
+		
+		if ( ((PINC & (1 << PINC0)) == 0) && (botonAnt1 == 1) ) { //Si se presiono el boton 1 y previamente no estaba presionado
+			contadorSec1=0; //Reseteo el contador de la secuencia para asegurarme 100ms entre cada led prendido
+			//Actualizo segun la secuencia a realizar
+			if (estAct1==1){ 
 			 estAct1=0;
-			else 
-			 estAct1=1;
-	    if (!(contadorSec1 % 2)) //Si pasaron 100 ms realizo la secuencia correspondiente
-			{
-				if(estAct1==1)
-					secuenciaB(); //Se encarga de la logica de prender el led correspondiente
-				else 
-					secuenciaA();
+			 ledSec1=LSB;
 			}
+			else {
+			 estAct1=1;
+			 ledSec1=MSB;
+			}
+		}
+		//Si pasaron 100 ms realizo la secuencia 1 correspondiente	
+	    if (!(contadorSec1 % 2)) {
+		    contadorSec1=0;
+			if(estAct1==0)
+				secuenciaA(); 
+			else 
+				secuenciaB();
+		}
 		
-		if ( PINC1 == 1 )
+		if ( ((PINC & (1 << PINC1)) == 0) && (botonAnt2 == 1) ) //Si se presiono el boton 2 y previamente no estaba presionado
 			if(estAct2==1)
 				estAct2=0;
 			else 
-				estAct2=1	 
-		if (!(contadorSec2 % 3))   //Si pasaron 150 ms realizo la secuencia correspondiente
-		{ 
-			
+				estAct2=1;	
+				 
+		//Si pasaron 150 ms realizo la secuencia 2 correspondiente
+		if (!(contadorSec2 % 3)) {
+			contadorSec2=0;
 			if(estAct2==1)
 			secuenciaD(); //Se encarga de la logica de prender el led correspondiente
 			else
@@ -48,28 +76,37 @@ int main(void)
 		
     }
 }
-void secuenciaB () {
-	PORTD=(1 << ledSec1);
-	if (ledSec1 == 7){
-		ledSec1--;
-		subiendo=0;}
-	else
-		if(ledSec1==0) {
-			ledSec1++;
-			subiendo=1;}
-		else 
-			if(subiendo)
-				ledSec1++;
-			else ledSec1--;
-	
+
+void configurarPuertos() {
+	 DDRD = 0xFF; // Configuro PORTD como salida
+	 PORTD = 0x00; // Apagar todos los LEDs al inicio
+	 
+	 // Configurar PORTC0 y PORTC1 como entradas para los pulsadores
+	 DDRC &= ~((1 << PINC0) | (1 << PINC1));  //Seteo PORTC0 y PORTC1 como entrada
+	 PORTC |= (1 << PINC0) | (1 << PINC1); //Activo las resistencias de pull-up internas
 }
+
 
 void secuenciaA () {
 	PORTD=(1 << ledSec1);	
-	if(ledSec1== 7)
-		ledSec1=0;
+	if(ledSec1 == MSB)
+		ledSec1=LSB;
 	else 
 		ledSec1++;
+	
+}
+
+void secuenciaB () {
+	PORTD = (1 << ledSec1);
+	if (ledSec1 == MSB) //Si llegue al MSB bajo hacia el LSB
+		subiendo=0;
+	else
+		if(ledSec1 == LSB)  //Si llegue al LSB, reboto hacia el MSB
+		   subiendo=1;
+	if(subiendo) //Sigo subiendo/bajando segun corresponda
+	  ledSec1++;
+	else 
+	  ledSec1--;
 	
 }
 
@@ -117,19 +154,14 @@ EXPLICACIÓN DETALLADA:
 
 */
 
-#define F_CPU 16000000UL // Ajusta esto a la frecuencia de tu simulación en Proteus
+ // Ajusta esto a la frecuencia de tu simulación en Proteus
 
-#include <avr/io.h>
+/*#include <avr/io.h>
 #include <util/delay.h>
 
 int main(void)
 {
-    DDRD = 0xFF; // DDRD = 0b11111111; // Configura PORTD como salida
-    PORTD = 0x00; // Apagar todos los LEDs al inicio
-    
-    // Configurar PORTC0 y PORTC1 como entradas para los pulsadores
-    DDRC &= ~((1 << PINC0) | (1 << PINC1));  //Anexo1
-    PORTC |= (1 << PINC0) | (1 << PINC1); // Anexo2
+   
     
     // Variables del sistema (Usamos variables locales de 8-bits para optimizar SRAM y velocidad)
     uint8_t tick_50ms = 0;
@@ -180,4 +212,4 @@ int main(void)
             tick_50ms = 0;
         }
     }
-}
+} */
