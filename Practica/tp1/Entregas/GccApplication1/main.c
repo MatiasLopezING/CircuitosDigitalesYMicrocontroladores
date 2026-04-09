@@ -121,6 +121,33 @@ void secuenciaD () {
 
 
 /*-------------------------------------------------------------------------------------------------------*/
+/*
+Un nop (No Operation) consume exactamente 1 ciclo de reloj.
+Dado que tu microcontrolador corre a 16 MHz:
+
+protocolo dice que para enviar un 0, debemos mantener el pin en ALTO por 400 ns y luego en BAJO por 850 ns.
+
+Tiempo de 1 ciclo = 1 / 16,000,000 = 62.5 ns
+
+Enviar un 0:
+
+400ns/62.5ns = 6.4 ciclos (Aproximadamente 6 NOPs para el pulso en ALTO)
+850ns/62.5ns = 13.6 ciclos (Aproximadamente 14 NOPs para el pulso en BAJO)
+
+Emvoar un 1:
+
+protocolo dice que para enviar un 1, debemos mantener el pin en ALTO por 800 ns y luego en BAJO por 450 ns.
+
+800ns/62.5ns = 12.8 ciclos (Aproximadamente 13 NOPs para el pulso en ALTO)
+450ns/62.5ns = 7.2 ciclos (Aproximadamente 7 NOPs para el pulso en BAJO)
+
+Encender/Apagar el pin: La instrucción en lenguaje ensamblador que usa el compilador para poner un pin en alto
+o bajo (sbi o cbi al puerto) consume 2 ciclos 125ns
+
+
+*/
+
+
 /*	version a revisar del codigo para inciso 2	*/
 /* // DDRC &= ~((1 << PINC0) | (1 << PINC1));
 
