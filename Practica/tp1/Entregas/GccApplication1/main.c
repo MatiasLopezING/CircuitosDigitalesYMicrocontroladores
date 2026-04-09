@@ -3,6 +3,7 @@
 #include <util/delay.h>
 #define MSB 7
 #define LSB 0
+#define NOP asm volatile("nop\n\t")
 
 void secuenciaA();
 void secuenciaB();
@@ -84,6 +85,10 @@ void configurarPuertos() {
 	 // Configurar PORTC0 y PORTC1 como entradas para los pulsadores
 	 DDRC &= ~((1 << PINC0) | (1 << PINC1));  //Seteo PORTC0 y PORTC1 como entrada
 	 PORTC |= (1 << PINC0) | (1 << PINC1); //Activo las resistencias de pull-up internas
+
+     // Neopixel (Pin PB0 como salida, arrancando en bajo)
+     DDRB |= (1 << PINB0);
+     PORTB &= ~(1 << PINB0);
 }
 
 
