@@ -27,9 +27,13 @@ int main(void)
 	
     while (1) 
     {
-		botonAnt1= PINC & (1 << PINC0); //Guardo estado del boton de la secuencia 1
+		/*botonAnt1= PINC & (1 << PINC0); //Guardo estado del boton de la secuencia 1
 		botonAnt2= PINC & (1 << PINC1); //Guardo estado del boton de la secuencia 2
+		*/
 		
+		botonAnt1= (PINC & (1 << PINC0)) ? 1 : 0; 
+        botonAnt2= (PINC & (1 << PINC1)) ? 1 : 0;
+
 		//Ventana de tiempo 
 		_delay_ms(50); 
 		
@@ -49,6 +53,7 @@ int main(void)
 			else {
 			 estAct1=1;
 			 ledSec1=MSB;
+			 subiendo=0; //Reinicio la secuencia 2 para que arranque desde el MSB hacia el LSB
 			}
 		}
 		//Si pasaron 100 ms realizo la secuencia 1 correspondiente	
@@ -116,20 +121,21 @@ void secuenciaB () {
 }
 
 // Envía un solo byte (8 bits) al Neopixel
+__attribute__((optimize("O0")))
 void neopixel_enviarByte(uint8_t byte) {
     for(uint8_t i = 0; i < 8; i++) {
-        if (byte & 0x80) { // Si el bit actual es un '1'
-            PORTB |= (1 << PINB0);  // Pin en ALTO
-            NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; // Esperamos ~800ns
-            PORTB &= ~(1 << PINB0); // Pin en BAJO
-            NOP; NOP; // Esperamos ~450ns
-        } else {           // Si el bit actual es un '0'
-            PORTB |= (1 << PINB0);  // Pin en ALTO
-            NOP; NOP; NOP; NOP; // Esperamos ~400ns
-            PORTB &= ~(1 << PINB0); // Pin en BAJO
-            NOP; NOP; NOP; NOP; NOP; NOP; // Esperamos ~850ns
+        if (byte & 0x80) { // BIT '1'
+            PORTB |= (1 << PINB0);
+            NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; // ~750ns (12 NOPs)
+            PORTB &= ~(1 << PINB0);
+            NOP; NOP; NOP; NOP; NOP; NOP; NOP; // ~437ns bajo (7 NOPs + overhead)
+        } else { // BIT '0'
+            PORTB |= (1 << PINB0);
+            NOP; NOP; NOP; NOP; NOP; NOP; // ~375ns alto (6 NOPs)
+            PORTB &= ~(1 << PINB0);
+            NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; // ~812ns bajo
         }
-        byte <<= 1; // Pasamos al siguiente bit
+        byte <<= 1;
     }
 }
 
@@ -156,6 +162,7 @@ void neopixel_AlternarRojoAzul() {
             else neopixel_enviarColor(0, 0, 0);              // Apagado
         }
     }
+	_delay_us(60); // Tiempo de reset para los Neopixels (más de 50us)
 }
 
 void neopixel_DesplazamientoVerde() {
@@ -172,6 +179,9 @@ void neopixel_DesplazamientoVerde() {
     // Mover hacia la izquierda y reiniciar al llegar al extremo
     if (posicionLedVerde == 0) posicionLedVerde = 7;
     else posicionLedVerde--;
+	
+	_delay_us(60); // Tiempo de reset para los Neopixels (más de 50us)
+
 }
 
 
