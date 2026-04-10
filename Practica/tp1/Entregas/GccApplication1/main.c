@@ -115,6 +115,32 @@ void secuenciaB () {
 	
 }
 
+// Envía un solo byte (8 bits) al Neopixel
+void neopixel_enviarByte(uint8_t byte) {
+    for(uint8_t i = 0; i < 8; i++) {
+        if (byte & 0x80) { // Si el bit actual es un '1'
+            PORTB |= (1 << PINB0);  // Pin en ALTO
+            NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; // Esperamos ~800ns
+            PORTB &= ~(1 << PINB0); // Pin en BAJO
+            NOP; NOP; // Esperamos ~450ns
+        } else {           // Si el bit actual es un '0'
+            PORTB |= (1 << PINB0);  // Pin en ALTO
+            NOP; NOP; NOP; NOP; // Esperamos ~400ns
+            PORTB &= ~(1 << PINB0); // Pin en BAJO
+            NOP; NOP; NOP; NOP; NOP; NOP; // Esperamos ~850ns
+        }
+        byte <<= 1; // Pasamos al siguiente bit
+    }
+}
+
+// Envía un color completo (24 bits) a un LED
+void neopixel_enviarColor(uint8_t rojo, uint8_t verde, uint8_t azul) {
+    // El protocolo WS2812 requiere que el orden sea Verde, Rojo, Azul (GRB)
+    neopixel_enviarByte(verde); 
+    neopixel_enviarByte(rojo);
+    neopixel_enviarByte(azul);
+}
+
 void neopixel_AlternarRojoAzul() {
     static uint8_t faseColor = 0;
     faseColor = !faseColor; 
