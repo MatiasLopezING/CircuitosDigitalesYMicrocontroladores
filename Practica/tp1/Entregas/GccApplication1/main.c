@@ -7,8 +7,8 @@
 
 void secuenciaA();
 void secuenciaB();
-void secuenciaC();
-void secuenciaD();
+void neopixel_AlternarRojoAzul();
+void neopixel_DesplazamientoVerde();
 void configurarPuertos();
 
 uint8_t ledSec1=LSB; //La secuencia 1 comienza con el LSB
@@ -70,9 +70,9 @@ int main(void)
 		if (!(contadorSec2 % 3)) {
 			contadorSec2=0;
 			if(estAct2==1)
-			secuenciaD(); //Se encarga de la logica de prender el led correspondiente
+			neopixel_DesplazamientoVerde(); //Se encarga de la logica de prender el led correspondiente
 			else
-			secuenciaC();
+			neopixel_AlternarRojoAzul();
 		}
 		
     }
@@ -115,12 +115,37 @@ void secuenciaB () {
 	
 }
 
-void secuenciaC () {
-	
+void neopixel_AlternarRojoAzul() {
+    static uint8_t faseColor = 0;
+    faseColor = !faseColor; 
+    
+    for(uint8_t i = 0; i < 8; i++) {
+        if (i % 2 == 0) {
+            // LEDs Pares
+            if (faseColor) neopixel_enviarColor(255, 0, 0); // Rojo
+            else neopixel_enviarColor(0, 0, 0);             // Apagado
+        } else {
+            // LEDs Impares
+            if (!faseColor) neopixel_enviarColor(0, 0, 255); // Azul
+            else neopixel_enviarColor(0, 0, 0);              // Apagado
+        }
+    }
 }
 
-void secuenciaD () {
-	
+void neopixel_DesplazamientoVerde() {
+    static uint8_t posicionLedVerde = 7; // Arranca en el extremo derecho
+    
+    for(uint8_t i = 0; i < 8; i++) {
+        if (i == posicionLedVerde) {
+            neopixel_enviarColor(0, 255, 0); // Verde
+        } else {
+            neopixel_enviarColor(0, 0, 0);   // Apagado
+        }
+    }
+    
+    // Mover hacia la izquierda y reiniciar al llegar al extremo
+    if (posicionLedVerde == 0) posicionLedVerde = 7;
+    else posicionLedVerde--;
 }
 
 
