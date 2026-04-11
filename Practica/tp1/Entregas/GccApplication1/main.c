@@ -5,11 +5,13 @@
 #define LSB 0
 #define NOP asm volatile("nop\n\t")
 
-void secuenciaA();
-void secuenciaB();
-void neopixel_AlternarRojoAzul();
-void neopixel_DesplazamientoVerde();
-void configurarPuertos();
+static inline void secuenciaA();
+static inline void secuenciaB();
+static inline void secuenciaC();
+static inline void secuenciaD();
+static inline void configurarPuertos();
+static inline void neopixel_enviarByte(uint8_t byte);
+static inline void neopixel_enviarColor(uint8_t rojo, uint8_t verde, uint8_t azul);
 
 uint8_t ledSec1=LSB; //La secuencia 1 comienza con el LSB
 uint8_t subiendo=0; //La secuencia 2 comienza desde el MSB hacia el LSB
@@ -75,15 +77,15 @@ int main(void)
 		if (!(contadorSec2 % 3)) {
 			contadorSec2=0;
 			if(estAct2==1)
-			neopixel_DesplazamientoVerde(); //Se encarga de la logica de prender el led correspondiente
+			secuenciaC(); //Se encarga de la logica de prender el led correspondiente
 			else
-			neopixel_AlternarRojoAzul();
+			secuenciaD();
 		}
 		
     }
 }
 
-void configurarPuertos() {
+static inline void configurarPuertos() {
 	 DDRD = 0xFF; // Configuro PORTD como salida
 	 PORTD = 0x00; // Apagar todos los LEDs al inicio
 	 
@@ -97,7 +99,7 @@ void configurarPuertos() {
 }
 
 
-void secuenciaA () {
+static inline void secuenciaA () {
 	PORTD=(1 << ledSec1);	
 	if(ledSec1 == MSB)
 		ledSec1=LSB;
@@ -106,7 +108,7 @@ void secuenciaA () {
 	
 }
 
-void secuenciaB () {
+static inline void secuenciaB () {
 	PORTD = (1 << ledSec1);
 	if (ledSec1 == MSB) //Si llegue al MSB bajo hacia el LSB
 		subiendo=0;
@@ -120,35 +122,57 @@ void secuenciaB () {
 	
 }
 
+	
+
 // Envía un solo byte (8 bits) al Neopixel
-__attribute__((optimize("O0")))
-void neopixel_enviarByte(uint8_t byte) {
+static inline void neopixel_enviarByte(uint8_t byte) {
     for(uint8_t i = 0; i < 8; i++) {
         if (byte & 0x80) { // BIT '1'
             PORTB |= (1 << PINB0);
-            NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; // ~750ns (12 NOPs)
+            NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP;  // 812.5ns (10 ciclos de NOP + 3 de asignacion posterior)
             PORTB &= ~(1 << PINB0);
-            NOP; NOP; NOP; NOP; NOP; NOP; NOP; // ~437ns bajo (7 NOPs + overhead)
+            NOP; NOP; NOP; NOP; NOP; NOP;  // ~437.5 ns bajo (7 NOPs + Overhead de hacer byte <<= 1 (1 ciclo=62.5ns) + Overhead for)
         } else { // BIT '0'
             PORTB |= (1 << PINB0);
-            NOP; NOP; NOP; NOP; NOP; NOP; // ~375ns alto (6 NOPs)
+            NOP; NOP; NOP;  // ~375ns en alto ( 3 Ciclos de NOP's + 3 ciclos de la asignacion posterior)
             PORTB &= ~(1 << PINB0);
-            NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; // ~812ns bajo
+            NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP;   // ~750ns bajo + Overhead de hacer byte <<= 1 (1 ciclo=62.5ns) + Overhead for
         }
         byte <<= 1;
     }
 }
+/*-------------------------------------------------------------------------------------------------------*/
+/*
+Un NOP consume 1 ciclo de reloj.
+Tiempo de 1 ciclo = 1 / 16,000,000 = 62.5 ns
+
+El datasheet del Neopxiel dice que para enviar un codigo de '0', debemos mantener el pin en ALTO por 400 ns y luego en BAJO por 850 ns.
+
+400ns/62.5ns = 6.4 ciclos 
+850ns/62.5ns = 13.6 ciclos 
+
+El datasheet del Neopixel dice que para enviar un codigo de '1', debemos mantener el pin en ALTO por 800 ns y luego en BAJO por 450 ns.
+
+800ns/62.5ns = 12.8 ciclos 
+450ns/62.5ns = 7.2 ciclos 
+
+Encender/Apagar el pin: Al hacer instrucciones del tipo PORTB &= ~(1 << PINB0) o PORTB |= (1 << PINB0) se verifico que al compilar el codigo
+el codigo en Assembly generado ocupaba 3 ciclos de instruccion para realizar la actualizacion del pin 0 del puerto B. Por lo que se tomo esto en consideracion 
+a la hora de elegir la cantidad de NOP's a ejecutar.
+
+A su vez se tuvo en cuenta que la tolerancia de los tiempos mencionados es de +- 150 ns.
+*/
 
 // Envía un color completo (24 bits) a un LED
-void neopixel_enviarColor(uint8_t rojo, uint8_t verde, uint8_t azul) {
+static inline void neopixel_enviarColor(uint8_t rojo, uint8_t verde, uint8_t azul) {
     // El protocolo WS2812 requiere que el orden sea Verde, Rojo, Azul (GRB)
     neopixel_enviarByte(verde); 
     neopixel_enviarByte(rojo);
     neopixel_enviarByte(azul);
 }
 
-void neopixel_AlternarRojoAzul() {
-    static uint8_t faseColor = 0;
+static inline void secuenciaC() {
+    static uint8_t faseColor = 0; 
     faseColor = !faseColor; 
     
     for(uint8_t i = 0; i < 8; i++) {
@@ -165,7 +189,7 @@ void neopixel_AlternarRojoAzul() {
 	_delay_us(60); // Tiempo de reset para los Neopixels (más de 50us)
 }
 
-void neopixel_DesplazamientoVerde() {
+static inline void secuenciaD() {
     static uint8_t posicionLedVerde = 7; // Arranca en el extremo derecho
     
     for(uint8_t i = 0; i < 8; i++) {
@@ -186,32 +210,7 @@ void neopixel_DesplazamientoVerde() {
 
 
 
-/*-------------------------------------------------------------------------------------------------------*/
-/*
-Un nop (No Operation) consume exactamente 1 ciclo de reloj.
-Dado que tu microcontrolador corre a 16 MHz:
 
-protocolo dice que para enviar un 0, debemos mantener el pin en ALTO por 400 ns y luego en BAJO por 850 ns.
-
-Tiempo de 1 ciclo = 1 / 16,000,000 = 62.5 ns
-
-Enviar un 0:
-
-400ns/62.5ns = 6.4 ciclos (Aproximadamente 6 NOPs para el pulso en ALTO)
-850ns/62.5ns = 13.6 ciclos (Aproximadamente 14 NOPs para el pulso en BAJO)
-
-Emvoar un 1:
-
-protocolo dice que para enviar un 1, debemos mantener el pin en ALTO por 800 ns y luego en BAJO por 450 ns.
-
-800ns/62.5ns = 12.8 ciclos (Aproximadamente 13 NOPs para el pulso en ALTO)
-450ns/62.5ns = 7.2 ciclos (Aproximadamente 7 NOPs para el pulso en BAJO)
-
-Encender/Apagar el pin: La instrucción en lenguaje ensamblador que usa el compilador para poner un pin en alto
-o bajo (sbi o cbi al puerto) consume 2 ciclos 125ns
-
-
-*/
 
 
 /*	version a revisar del codigo para inciso 2	*/
