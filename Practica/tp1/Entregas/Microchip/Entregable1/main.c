@@ -140,7 +140,7 @@ static inline void neopixel_enviarByte(uint8_t byte) {
 	for(uint8_t i = 0; i < 8; i++) {
 		if (byte & 0x80) { // BIT '1'
 			PORTB |= (1 << PINB0);
-			NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP;  // 812.5ns (10 ciclos de NOP + 3 ciclos de la asignacion posterior)
+			NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP;   // 812.5ns (10 ciclos de NOP + 3 ciclos de la asignacion posterior)
 			PORTB &= ~(1 << PINB0);
 			NOP; NOP; NOP; NOP; NOP; NOP;  // >437.5 ns bajo (6 ciclos de NOP + Overhead de hacer byte <<= 1 (1 ciclo=62.5ns) + Overhead for + Overhead if + Overhead subida a ALTO)
 			} else { // BIT '0'
@@ -155,7 +155,7 @@ static inline void neopixel_enviarByte(uint8_t byte) {
 
 /*
 Un NOP consume 1 ciclo de reloj.
-Tiempo de 1 ciclo = 1 / 16,000,000 = 62.5 ns
+Tiempo de 1 ciclo = 1 / 16000000 = 62.5 ns
 
 El datasheet del Neopixel dice que para enviar un codigo de '0', debemos mantener el pin en ALTO por 400 ns y luego en BAJO por 850 ns.
 
@@ -167,14 +167,11 @@ El datasheet del Neopixel dice que para enviar un codigo de '1', debemos mantene
 800ns/62.5ns = 12.8 ciclos
 450ns/62.5ns = 7.2 ciclos
 
-Encender/Apagar el pin: Al hacer instrucciones del tipo PORTB &= ~(1 << PINB0) o PORTB |= (1 << PINB0) se verifico que el codigo
-en Assembly generado ocupaba 3 ciclos de instruccion para realizar la actualizacion del pin 0 del puerto B. Por lo que se tomo esto en consideracion
-a la hora de elegir la cantidad de NOP's a ejecutar.
 
-A su vez hay que tener en cuenta que luego de poner en bajo el bit, hay desplazamiento, bucle for, y asignacion para volver a subir la señal. Todo esto agrega overhead pero al nosotros ya
-asegurarnos cumplir con el tiempo minimo en bajo, mientras no este en bajo un tiempo mayor al tiempo de reset no habra ningun problema. Para hacer la solucion mas eficiente posible podriamos probar
-ir sacando NOP's y ver hasta cuando funciona, con esto el overhead de las demas estructuras estarian compensando el tiempo que sacamos con los NOP's.
-Para nuestra solucion pusimos una cantidad de NOP's que ya este cerca del valor deseado y el overhead aumentara ese tiempo pero sin hacer que deje de funcionar la transmision.
+Hay que tener en cuenta que luego de poner en bajo el bit, hay desplazamiento, bucle for, y asignacion para volver a subir la señal. Todo esto agrega overhead pero al nosotros ya
+asegurarnos cumplir con el tiempo minimo en bajo, mientras no este en bajo un tiempo mayor al tiempo de reset no habra ningun problema. 
+Para hacer la solucion mas eficiente posible podriamos probar ir sacando NOP's y ver hasta cuando funciona, con esto el overhead de las demas estructuras estarian compensando el tiempo que sacamos con los NOP's.
+Para nuestra solucion pusimos una cantidad de NOP's que mantenga la señal en bajo o en alto un tiempo cercano al que marca el datasheet, debido al overhead aumentara ese tiempo pero sin hacer que deje de funcionar la transmision.
 */
 
 // Envía un color completo (24 bits) a un LED
@@ -210,17 +207,17 @@ static inline void secuenciaD() {
 	static uint8_t posicionLedVerde = 7; // Arranca en el extremo derecho
 	
 	for(uint8_t i = 0; i < 8; i++) {
-		if (i == posicionLedVerde) {
+		if (i == posicionLedVerde) 
 			neopixel_enviarColor(0, 255, 0); // Verde
-			} else {
+		else 
 			neopixel_enviarColor(0, 0, 0);   // Apagado
-		}
+
 	}
 	
 	// Mover hacia la izquierda y reiniciar al llegar al extremo
 	if (posicionLedVerde == 0)
 		posicionLedVerde = 7;
-	else
+	else 
 		posicionLedVerde--;
 	
 	_delay_us(60); // Tiempo de reset para los Neopixels (más de 50us)
