@@ -135,7 +135,7 @@ static inline void secuenciaB () {
 
 
 
-// Envía un solo byte (8 bits) al Neopixel
+// Envï¿½a un solo byte (8 bits) al Neopixel
 static inline void neopixel_enviarByte(uint8_t byte) {
 	for(uint8_t i = 0; i < 8; i++) {
 		if (byte & 0x80) { // BIT '1'
@@ -168,13 +168,13 @@ El datasheet del Neopixel dice que para enviar un codigo de '1', debemos mantene
 450ns/62.5ns = 7.2 ciclos
 
 
-Hay que tener en cuenta que luego de poner en bajo el bit, hay desplazamiento, bucle for, y asignacion para volver a subir la señal. Todo esto agrega overhead pero al nosotros ya
+Hay que tener en cuenta que luego de poner en bajo el bit, hay desplazamiento, bucle for, y asignacion para volver a subir la seï¿½al. Todo esto agrega overhead pero al nosotros ya
 asegurarnos cumplir con el tiempo minimo en bajo, mientras no este en bajo un tiempo mayor al tiempo de reset no habra ningun problema. 
 Para hacer la solucion mas eficiente posible podriamos probar ir sacando NOP's y ver hasta cuando funciona, con esto el overhead de las demas estructuras estarian compensando el tiempo que sacamos con los NOP's.
-Para nuestra solucion pusimos una cantidad de NOP's que mantenga la señal en bajo o en alto un tiempo cercano al que marca el datasheet, debido al overhead aumentara ese tiempo pero sin hacer que deje de funcionar la transmision.
+Para nuestra solucion pusimos una cantidad de NOP's que mantenga la seï¿½al en bajo o en alto un tiempo cercano al que marca el datasheet, debido al overhead aumentara ese tiempo pero sin hacer que deje de funcionar la transmision.
 */
 
-// Envía un color completo (24 bits) a un LED
+// Envï¿½a un color completo (24 bits) a un LED
 static inline void neopixel_enviarColor(uint8_t rojo, uint8_t verde, uint8_t azul) {
 	neopixel_enviarByte(verde);
 	neopixel_enviarByte(rojo);
@@ -200,7 +200,7 @@ static inline void secuenciaC() {
 				neopixel_enviarColor(0, 0, 0);   // Apagado
 		}
 	}
-	_delay_us(60); // Tiempo de reset para los Neopixels (más de 50us)
+	_delay_us(60); // Tiempo de reset para los Neopixels (mï¿½s de 50us)
 }
 
 static inline void secuenciaD() {
@@ -220,7 +220,7 @@ static inline void secuenciaD() {
 	else 
 		posicionLedVerde--;
 	
-	_delay_us(60); // Tiempo de reset para los Neopixels (más de 50us)
+	_delay_us(60); // Tiempo de reset para los Neopixels (mï¿½s de 50us)
 
 }
 
