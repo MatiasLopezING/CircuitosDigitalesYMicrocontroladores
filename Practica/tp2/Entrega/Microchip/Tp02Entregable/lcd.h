@@ -1,9 +1,9 @@
 /**
  * @file lcd.h
- * @brief Librería para el control de un display LCD HD44780.
+ * @brief Librería para control de display LCD HD44780.
  * 
- * Configurado para interfaz de 4 bits. Contiene las definiciones de pines,
- * comandos básicos de bajo nivel y funciones de alto nivel para escritura.
+ * Configurado para interfaz de 4 bits. Contiene definiciones de pines,
+ * comandos de bajo nivel y funciones de alto nivel.
  */
 
 #ifndef LCD_H
@@ -28,7 +28,7 @@
 // ==============================================================================
 
 #define LCD_RS 1    // Pin MCU conectado a LCD RS (PD1)
-#define LCD_RW 2    // Reservado (En Proteus va a GND)
+#define LCD_RW 2    // Pin MCU conectado a LCD RW (Reservado)
 #define LCD_E  0    // Pin MCU conectado a LCD E (PD0)
 
 #define LCD_D4 1    // Pin MCU conectado a LCD D4 (PC1)
@@ -134,7 +134,7 @@ void LCD_Actualizar(uint16_t seg);
 /**
  * @brief Imprime un tiempo dado en formato "MM:SS" en la primera línea.
  */
-void LCD_PrintTime(uint8_t minutos, uint8_t segundos);
+void LCD_ImprimirTiempo(uint8_t minutos, uint8_t segundos);
 
 /**
  * @brief Enciende o apaga el display completamente sin perder los datos en memoria.

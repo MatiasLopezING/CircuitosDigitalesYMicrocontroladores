@@ -2,7 +2,7 @@
 #include <avr/interrupt.h>
 
 // ==============================================================================
-// Variables Globales Volátiles (Compartidas con el flujo principal y otras rutinas)
+// Variables Globales Volátiles
 // ==============================================================================
 volatile uint16_t timer_milisegundos = 0;
 volatile uint16_t segundos_transcurridos = 0;
@@ -17,23 +17,22 @@ void TIMER_Init(void) {
     // Frecuencia del reloj (F_CPU): 8 MHz
     // ---------------------------------------------------------
 
-    // 1. Configurar Modo CTC (Clear Timer on Compare match)
-    // El contador vuelve a 0 automáticamente al alcanzar OCR0A.
+    // 1. Configuración de Modo CTC (Clear Timer on Compare match).
+    // Reinicio automático de contador al alcanzar OCR0A.
     TCCR0A = (1 << WGM01);
 
-    // 2. Configurar Prescaler en 64 y encender el timer
-    // F_timer = 8,000,000 / 64 = 125,000 Hz (1 tick cada 8 us)
+    // 2. Configuración de Prescaler (64) e inicialización del timer.
+    // Frecuencia de timer: 125,000 Hz (Resolución: 8 us).
     TCCR0B = (1 << CS01) | (1 << CS00);
 
-    // 3. Configurar el tope (OCR0A) para obtener 1 ms exacto
-    // 1 ms = 1000 Hz. Por ende: 125,000 / 1000 = 125 ticks.
-    // Como el contador cuenta desde 0, el tope es 125 - 1 = 124.
+    // 3. Configuración del valor tope (OCR0A) para 1 ms exacto.
+    // Tope = (125,000 Hz / 1000 Hz) - 1 = 124.
     OCR0A = 124;
 
-    // 4. Habilitar la interrupción por comparación con OCR0A
+    // 4. Habilitación de interrupción por comparación con OCR0A.
     TIMSK0 = (1 << OCIE0A);
 
-    // 5. Habilitar interrupciones globales
+    // 5. Habilitación de interrupciones globales.
     sei();
 }
 
@@ -42,27 +41,26 @@ void TIMER_Init(void) {
 // ==============================================================================
 
 /**
- * @brief ISR - Timer0 Compare Match A
+ * @brief ISR - Timer0 Compare Match A.
  * 
- * Se ejecuta automáticamente mediante interrupción de hardware cada 1 ms.
- * Funciona como la base de tiempos (Tick) para el sistema.
+ * Ejecución periódica cada 1 ms. Base de tiempos del sistema.
  */
 ISR(TIMER0_COMPA_vect) {
     
-    // Incremento de la base de tiempos local (milisegundos)
+    // Actualización de base de tiempos local.
     timer_milisegundos++;
     
-    // Bloque que se ejecuta exactamente cada 1 segundo (1000 ms)
+    // Ejecución periódica cada 1 segundo (1000 ms).
     if (timer_milisegundos >= 1000) { 
         timer_milisegundos = 0;
         segundos_transcurridos++;
         
-        // Prevención de overflow si el microondas pasa los 99 segundos
+        // Manejo de desbordamiento (límite 99 segundos).
         if (segundos_transcurridos > 99) {
             segundos_transcurridos = 0;
         }
         
-        // Levantar bandera para notificar al flujo principal que pasó un segundo
+        // Actualización de bandera de estado.
         flag_actualizar_lcd = 1; 
     }
 }

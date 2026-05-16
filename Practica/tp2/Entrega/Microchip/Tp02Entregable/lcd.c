@@ -1,16 +1,16 @@
 #include "lcd.h"
 
-//define 8 custom LCD chars
+// Definición de caracteres personalizados LCD
 const uint8_t LcdCustomChar[] PROGMEM=
 {
-	0x00, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, // 0. 0/5 full progress block
-	0x00, 0x1F, 0x10, 0x10, 0x10, 0x10, 0x1F, 0x00, // 1. 1/5 full progress block
-	0x00, 0x1F, 0x18, 0x18, 0x18, 0x18, 0x1F, 0x00, // 2. 2/5 full progress block
-	0x00, 0x1F, 0x1C, 0x1C, 0x1C, 0x1C, 0x1F, 0x00, // 3. 3/5 full progress block
-	0x00, 0x1F, 0x1E, 0x1E, 0x1E, 0x1E, 0x1F, 0x00, // 4. 4/5 full progress block
-	0x00, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x00, // 5. 5/5 full progress block
-	0x03, 0x07, 0x0F, 0x1F, 0x0F, 0x07, 0x03, 0x00, // 6. rewind arrow
-	0x18, 0x1C, 0x1E, 0x1F, 0x1E, 0x1C, 0x18, 0x00  // 7. fast-forward arrow
+	0x00, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, // 0/5 progreso
+	0x00, 0x1F, 0x10, 0x10, 0x10, 0x10, 0x1F, 0x00, // 1/5 progreso
+	0x00, 0x1F, 0x18, 0x18, 0x18, 0x18, 0x1F, 0x00, // 2/5 progreso
+	0x00, 0x1F, 0x1C, 0x1C, 0x1C, 0x1C, 0x1F, 0x00, // 3/5 progreso
+	0x00, 0x1F, 0x1E, 0x1E, 0x1E, 0x1E, 0x1F, 0x00, // 4/5 progreso
+	0x00, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x00, // 5/5 progreso
+	0x03, 0x07, 0x0F, 0x1F, 0x0F, 0x07, 0x03, 0x00, // Flecha retroceso
+	0x18, 0x1C, 0x1E, 0x1F, 0x1E, 0x1C, 0x18, 0x00  // Flecha avance
 };
 
 // ==============================================================================
@@ -24,24 +24,24 @@ const uint8_t LcdCustomChar[] PROGMEM=
 void LCDsendChar(uint8_t ch){
 
 #ifdef LCD_4bit
-    // ENCIENDE RS: Le avisa al LCD que es una letra (VITAL)
+    // Habilitación de pin RS para envío de datos.
     LCP |= (1<<LCD_RS); 
     
-    // Mitad ALTA
+    // Nibble superior.
 	LCD_DATAWR(ch & 0b11110000);
 	LCP|=1<<LCD_E;		
 	_delay_us(50);
 	LCP&=~(1<<LCD_E);	
 	_delay_ms(1);
 	
-	// Mitad BAJA
+	// Nibble inferior.
 	LCD_DATAWR((ch & 0b00001111)<<4);
 	LCP|=1<<LCD_E;		
 	_delay_us(50);
 	LCP&=~(1<<LCD_E);	
-	_delay_ms(2); // Retardo MUY generoso para Proteus
+	_delay_ms(2); // Retardo de espera.
 #else
-	//8 bit part
+	// Interfaz de 8 bits.
 	LDP=ch;
 	LCP|=1<<LCD_RS;
 	LCP|=1<<LCD_E;		
@@ -59,29 +59,29 @@ void LCDsendChar(uint8_t ch){
 void LCDsendCommand(uint8_t cmd)	
 {
 #ifdef LCD_4bit	
-    // APAGA RS: Le avisa al LCD que es un comando (VITAL)
+    // Deshabilitación de pin RS para envío de comandos.
     LCP &= ~(1<<LCD_RS); 
     
-	// Mitad ALTA
+	// Nibble superior.
 	LCD_DATAWR(cmd & 0b11110000);
 	LCP|=1<<LCD_E;		
 	_delay_us(50);
 	LCP&=~(1<<LCD_E);
 	_delay_ms(1);	
 	
-	// Mitad BAJA
+	// Nibble inferior.
 	LCD_DATAWR((cmd & 0b00001111)<<4);	
 	LCP|=1<<LCD_E;		
 	_delay_us(50);
 	LCP&=~(1<<LCD_E);
 	
 	if(cmd == 0x01 || cmd == 0x02) {
-        _delay_ms(5); // Retardo GIGANTE para Limpiar/Home
+        _delay_ms(5); // Retardo extendido para comandos Clear/Home.
     } else {
-        _delay_ms(2); // Retardo estándar grande para Proteus
+        _delay_ms(2); // Retardo de espera.
     }
 #else
-	//8 bit part
+	// Interfaz de 8 bits.
 	LDP=cmd;
 	LCP &= ~(1<<LCD_RS);
 	LCP|=1<<LCD_E;		
@@ -106,17 +106,17 @@ void LCDsendCommand(uint8_t cmd)
 void LCDinit(void)
 {
 #ifdef LCD_4bit	
-    // 1. Espera a que el voltaje sea estable al enchufar
+    // Espera de estabilización de voltaje.
 	_delay_ms(50);
 	
-	// FORZAMOS RS a 0 desde el principio (VITAL)
+	// Inicialización de pin RS.
     LCP &= ~(1<<LCD_RS);
 	
 	LDDR1|=1<<LCD_D7|1<<LCD_D6;
 	LDDR2|=1<<LCD_D4|1<<LCD_D5;
 	LCDR |= (1<<LCD_E) | (1<<LCD_RS);
 	
-    // 2. Secuencia de despertar (Pulsos únicos)
+    // Secuencia de inicialización (pulsos únicos).
 	LCD_DATAWR(0b00110000);	 // 0x30
 	LCP|=1<<LCD_E;		
 	_delay_us(50);
@@ -135,20 +135,20 @@ void LCDinit(void)
 	LCP&=~(1<<LCD_E);
 	_delay_ms(5);
 	
-	LCD_DATAWR(0b00100000);	 // 0x20 Pasamos a modo 4 bits
+	LCD_DATAWR(0b00100000);	 // 0x20 Configuración a modo 4 bits.
 	LCP|=1<<LCD_E;		
 	_delay_us(50);
 	LCP&=~(1<<LCD_E);
 	_delay_ms(5);
 	
-	// 3. A partir de acá, usamos la función formal que manda los 2 nibbles
-	LCDsendCommand(0x28); // Función: 4 bits, 2 lineas, 5x8 puntos
-	LCDsendCommand(0x08); // Apagar display por seguridad
-	LCDsendCommand(0x01); // Limpiar toda la pantalla
-	LCDsendCommand(0x06); // Modo de entrada (incrementar cursor a la derecha)
-	LCDsendCommand(0x0C); // Encender display, apagar cursor
+	// Configuración mediante comandos de 4 bits.
+	LCDsendCommand(0x28); // Modo 4 bits, 2 líneas, 5x8 puntos.
+	LCDsendCommand(0x08); // Apagar display.
+	LCDsendCommand(0x01); // Limpiar pantalla.
+	LCDsendCommand(0x06); // Modo de entrada: incremento a la derecha.
+	LCDsendCommand(0x0C); // Encender display, apagar cursor.
 	
-	//init 8 custom chars in CGRAM
+	// Inicialización de caracteres personalizados en CGRAM.
 	uint8_t ch=0, chn=0;
 	while(ch<64)
 	{
@@ -157,7 +157,7 @@ void LCDinit(void)
 	}
 
 #else
-	//8 bit LCD interface
+	// Interfaz LCD de 8 bits.
 	_delay_ms(40);
 	LDP=0x00;
 	LCP &= ~((1<<LCD_E) | (1<<LCD_RS));
@@ -170,7 +170,7 @@ void LCDinit(void)
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
 	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(5); // Retardo mayor a 4.1ms segun datasheet
+	_delay_ms(5); // Retardo según especificaciones.
 	//-----------two-----------
 	LDP=0<<LCD_D7|0<<LCD_D6|1<<LCD_D5|1<<LCD_D4|0<<LCD_D3
 			|0<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
@@ -185,21 +185,21 @@ void LCDinit(void)
 	_delay_us(1);
 	LCP&=~(1<<LCD_E);
 	_delay_us(50);
-	//--------8 bit dual line----------
+	// Modo 8 bits, 2 líneas.
 	LDP=0<<LCD_D7|0<<LCD_D6|1<<LCD_D5|1<<LCD_D4|1<<LCD_D3
 			|0<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
 	_delay_us(1);
 	LCP&=~(1<<LCD_E);
 	_delay_us(50);
-   //-----increment address, invisible cursor shift------
+   // Incremento de dirección, desplazamiento invisible de cursor.
 	LDP=0<<LCD_D7|0<<LCD_D6|0<<LCD_D5|0<<LCD_D4|1<<LCD_D3
 			|1<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
 	_delay_us(1);
 	LCP&=~(1<<LCD_E);
 	_delay_ms(2);
-		//init custom chars
+		// Inicialización de caracteres personalizados.
 	uint8_t ch=0, chn=0;
 	while(ch<64)
 	{
@@ -223,14 +223,14 @@ void LCDclr(void)
 	_delay_ms(5); 
 }
 
-//LCD cursor home
+// Retorno de cursor a inicio.
 void LCDhome(void)			
 {
 	LCDsendCommand(1<<LCD_HOME);
 	_delay_ms(5); 
 }
 
-//Outputs string to LCD
+// Transmisión de cadena de texto a LCD.
 void LCDstring(uint8_t* data, uint8_t nBytes)	
 {
 register uint8_t i;
@@ -244,7 +244,7 @@ register uint8_t i;
 	}
 }
 
-//Cursor to X Y position
+// Posicionamiento de cursor en coordenadas (X, Y).
 void LCDGotoXY(uint8_t x, uint8_t y)	
 {
 	register uint8_t DDRAMAddr;
@@ -262,9 +262,7 @@ void LCDGotoXY(uint8_t x, uint8_t y)
 	
 }
 
-//Copies string from flash memory to LCD at (x,y) position
-//const uint8_t welcomeln1[] PROGMEM="AVR LCD DEMO\0";
-//CopyStringtoLCD(welcomeln1, 3, 1);	
+// Copia cadena desde memoria flash a LCD en posición (x, y).
 void CopyStringtoLCD(const uint8_t *FlashLoc, uint8_t x, uint8_t y)
 {
 	uint8_t i;
@@ -275,21 +273,7 @@ void CopyStringtoLCD(const uint8_t *FlashLoc, uint8_t x, uint8_t y)
 	}
 }
 
-//defines char symbol in CGRAM
-/*
-const uint8_t backslash[] PROGMEM= 
-{
-0b00000000,//back slash
-0b00010000,
-0b00001000,
-0b00000100,
-0b00000010,
-0b00000001,
-0b00000000,
-0b00000000
-};
-LCDdefinechar(backslash,0);
-*/
+// Define símbolo en CGRAM.
 void LCDdefinechar(const uint8_t *pc,uint8_t char_code){
 	uint8_t a, pcc;
 	uint16_t i;
@@ -301,7 +285,7 @@ void LCDdefinechar(const uint8_t *pc,uint8_t char_code){
 		}
 }
 
-//Scrol n of characters Right
+// Desplazamiento de n caracteres a la izquierda.
 void LCDshiftLeft(uint8_t n)	
 {
 	for (uint8_t i=0;i<n;i++)
@@ -310,7 +294,7 @@ void LCDshiftLeft(uint8_t n)
 	}
 }
 
-//Scrol n of characters Left
+// Desplazamiento de n caracteres a la derecha.
 void LCDshiftRight(uint8_t n)	
 {
 	for (uint8_t i=0;i<n;i++)
@@ -319,19 +303,19 @@ void LCDshiftRight(uint8_t n)
 	}
 }
 
-//displays LCD cursor
+// Muestra cursor de LCD.
 void LCDcursorOn(void) 
 {
 	LCDsendCommand(0x0E);
 }
 
-//displays LCD blinking cursor
+// Muestra cursor parpadeante en LCD.
 void LCDcursorOnBlink(void)	
 {
 	LCDsendCommand(0x0F);
 }
 
-//turns OFF cursor
+// Apaga cursor.
 void LCDcursorOFF(void)	
 {
 	LCDsendCommand(0x0C);
@@ -341,19 +325,19 @@ void LCDcursorOFF(void)
 // Funciones Adicionales
 // ==============================================================================
 
-//blanks LCD
+// Apaga visualización en LCD.
 void LCDblank(void)		
 {
 	LCDsendCommand(0x08);
 }
 
-//Shows LCD
+// Enciende visualización en LCD.
 void LCDvisible(void)		
 {
 	LCDsendCommand(0x0C);
 }
 
-//Moves cursor by n poisitions left
+// Mueve cursor n posiciones a la izquierda.
 void LCDcursorLeft(uint8_t n)	
 {
 	for (uint8_t i=0;i<n;i++)
@@ -362,7 +346,7 @@ void LCDcursorLeft(uint8_t n)
 	}
 }
 
-//Moves cursor by n poisitions left
+// Mueve cursor n posiciones a la derecha.
 void LCDcursorRight(uint8_t n)	
 {
 	for (uint8_t i=0;i<n;i++)
@@ -371,21 +355,9 @@ void LCDcursorRight(uint8_t n)
 	}
 }
 
-//adapted fro mAVRLIB
-//Inicio de Comando Agregado por Fido
+// Escritura de dato entero en el módulo LCD.
 void LCDescribeDato(int val,unsigned int field_length)
 {
-	/***************************************************************
-	This function writes a integer type value to LCD module
-
-	Arguments:
-	1)int val	: Value to print
-
-	2)unsigned int field_length :total length of field in which the value is printed
-	must be between 1-5 if it is -1 the field length is no of digits in the val
-
-	****************************************************************/
-
 	char str[5]={0,0,0,0,0};
 	int i=4,j=0;
 	while(val)
@@ -405,7 +377,6 @@ void LCDescribeDato(int val,unsigned int field_length)
 	LCDsendChar(48+str[i]);
 	}
 }
-//**********   Final de Comando Agregado por 
 
 void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length)
 {
@@ -413,43 +384,36 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length)
 	uint16_t pixelprogress;
 	uint8_t c;
 
-	// draw a progress bar displaying (progress / maxprogress)
-	// starting from the current cursor position
-	// with a total length of "length" characters
-	// ***note, LCD chars 0-5 must be programmed as the bar characters
-	// char 0 = empty ... char 5 = full
+	// Dibuja barra de progreso desde la posición actual del cursor.
 
-	// total pixel length of bargraph equals length*PROGRESSPIXELS_PER_CHAR;
-	// pixel length of bar itself is
+	// Longitud de píxeles de la barra.
 	pixelprogress = ((progress*(length*PROGRESSPIXELS_PER_CHAR))/maxprogress);
 	
-	// print exactly "length" characters
+	// Imprime caracteres.
 	for(i=0; i<length; i++)
 	{
-		// check if this is a full block, or partial or empty
-		// (u16) cast is needed to avoid sign comparison warning
+		// Verificación de tipo de bloque (completo, parcial o vacío).
 		if( ((i*(uint16_t)PROGRESSPIXELS_PER_CHAR)+5) > pixelprogress )
 		{
-			// this is a partial or empty block
+			// Bloque parcial o vacío.
 			if( ((i*(uint16_t)PROGRESSPIXELS_PER_CHAR)) > pixelprogress )
 			{
-				// this is an empty block
-				// use space character?
+				// Bloque vacío.
 				c = 0;
 			}
 			else
 			{
-				// this is a partial block
+				// Bloque parcial.
 				c = pixelprogress % PROGRESSPIXELS_PER_CHAR;
 			}
 		}
 		else
 		{
-			// this is a full block
+			// Bloque completo.
 			c = 5;
 		}
 		
-		// write character to display
+		// Escritura de caracter.
 		LCDsendChar(c);
 	}	
 }
@@ -463,6 +427,7 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length)
  * @param minutos Minutos a mostrar.
  * @param segundos Segundos a mostrar.
  */
+void LCD_ImprimirTiempo(uint8_t minutos, uint8_t segundos) {
     char buffer[6];
     buffer[0] = (minutos / 10) + '0';
     buffer[1] = (minutos % 10) + '0';
@@ -526,8 +491,8 @@ void LCD_Actualizar(uint16_t seg) {
     uint8_t minutos = seg / 60;
     uint8_t segundos = seg % 60;
     
-    char buffer[6]; // "MM:SS" \0
-    // Formatear la cadena para que siempre tenga 2 dígitos (ej. 01:05)
+    char buffer[6]; // Cadena "MM:SS".
+    // Formateo a dos dígitos.
     buffer[0] = (minutos / 10) + '0';
     buffer[1] = (minutos % 10) + '0';
     buffer[2] = ':';
@@ -535,7 +500,7 @@ void LCD_Actualizar(uint16_t seg) {
     buffer[4] = (segundos % 10) + '0';
     buffer[5] = '\0';
     
-    LCDGotoXY(0, 0); // Ir a la primer fila
+    LCDGotoXY(0, 0); // Posicionamiento en primera fila.
     LCDstring((uint8_t*)buffer, 5);
 }
 

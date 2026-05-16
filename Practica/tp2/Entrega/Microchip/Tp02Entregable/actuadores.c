@@ -1,11 +1,11 @@
 #include "actuadores.h"
 
 void ACTUADORES_Init(void) {
-    // Configurar pines como salidas
+    // Configuración de pines como salidas.
     DDRB |= (1 << PB5);              // Magnetrón
     DDRC |= (1 << PC4) | (1 << PC5); // Luz y Alarma
 
-    // Apagar todos por defecto (estado lógico bajo)
+    // Inicialización en estado apagado.
     PORTB &= ~(1 << PB5);
     PORTC &= ~((1 << PC4) | (1 << PC5));
 }

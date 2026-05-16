@@ -12,67 +12,67 @@
 #include "timer.h"
 
 int main(void) {
-    // Desactivar Watchdog Timer por seguridad
+    // Desactivación del Watchdog Timer.
     MCUSR = 0;
     wdt_disable();
     
-    // Retardo inicial de estabilizacion
+    // Retardo inicial de estabilización.
     _delay_ms(100);
 
-    // Inicializacion de perifericos
+    // Inicialización de periféricos.
     ACTUADORES_Init();
     KEYPAD_Init();
     TIMER_Init();
     LCD_Init();
     
-    // Habilitar interrupciones globales
+    // Habilitación de interrupciones globales.
     sei();
     
-    // Interfaz inicial
-    LCD_Resetear(); // Imprime "00:00" en pantalla
+    // Interfaz inicial.
+    LCD_Resetear(); // Imprime estado inicial en pantalla.
     
     uint8_t tecla;
 
-    // Bucle principal: Prueba de integracion de hardware (sin MEF)
+    // Bucle principal de ejecución.
     while(1) {
         
-        // 1. Escaneo no bloqueante del teclado matricial
+        // Escaneo de teclado matricial.
         if (KEYPAD_Scan(&tecla)) {
             
-            // Feedback visual en el LCD
+            // Actualización de pantalla.
             LCDclr();
             LCDGotoXY(0, 0);
             LCDstring((uint8_t*)"Tecla: ", 7);
             LCDsendChar(tecla);
             
-            // Prueba de actuadores segun requerimientos del TP
+            // Control de actuadores.
             switch(tecla) {
-                case 'A': // START: Enciende magnetron y luz
+                case 'A': // Inicia operación.
                     MAGNETRON_On();
                     LUZ_On();
                     break;
-                case 'B': // STOP/CLEAR: Apaga todo y resetea
+                case 'B': // Detiene operación y resetea.
                     MAGNETRON_Off();
                     LUZ_Off();
                     ALARMA_Off();
                     LCD_Resetear();
                     break;
-                case 'C': // +30 SEG: Toggle de alarma para probar
+                case 'C': // Alterna estado de alarma.
                     ALARMA_Toggle();
                     break;
-                case 'D': // PUERTA: Apaga magnetron por seguridad
+                case 'D': // Apaga magnetrón.
                     MAGNETRON_Off();
                     break;
             }
         }
         
-        // 2. Base de tiempos de 1 segundo (gobernada por el Timer0)
+        // Actualización periódica gobernada por Timer0.
         if (flag_actualizar_lcd == 1) {
             flag_actualizar_lcd = 0;
-            // (Reservado para actualizar el cronometro del microondas)
+            // Actualización de cronómetro.
         }
         
-        _delay_ms(10); // Retardo para estabilizar el barrido
+        _delay_ms(10); // Retardo de estabilización.
     }
 
     return 0;

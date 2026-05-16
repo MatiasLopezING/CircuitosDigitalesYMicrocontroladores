@@ -6,7 +6,7 @@
 #include <util/delay.h>
 
 // ==============================================================================
-// Mapa de caracteres del teclado matricial 4x4
+// Mapa de caracteres de teclado matricial
 // ==============================================================================
 static const uint8_t keymap[4][4] = {
     {'1', '2', '3', 'A'},
@@ -16,18 +16,18 @@ static const uint8_t keymap[4][4] = {
 };
 
 void KEYPAD_Init(void) {
-    // Configurar Filas como salidas: PB4, PB3, PB0 y PD7
+    // Configuración de filas como salidas.
     DDRB |= (1 << PB4) | (1 << PB3) | (1 << PB0);
     DDRD |= (1 << PD7);
     
-    // Poner las filas en alto por defecto (inactivas)
+    // Inicialización de filas en estado lógico alto (inactivo).
     PORTB |= (1 << PB4) | (1 << PB3) | (1 << PB0);
     PORTD |= (1 << PD7);
     
-    // Configurar Columnas como entradas: PD3, PD5, PD4 y PD2
+    // Configuración de columnas como entradas.
     DDRD &= ~((1 << PD3) | (1 << PD5) | (1 << PD4) | (1 << PD2));
     
-    // Habilitar las resistencias de pull-up internas en las columnas
+    // Habilitación de resistencias pull-up en columnas.
     PORTD |= (1 << PD3) | (1 << PD5) | (1 << PD4) | (1 << PD2);
 }
 
@@ -36,7 +36,7 @@ void KEYPAD_Init(void) {
 // ==============================================================================
 
 /**
- * @brief Fuerza todas las filas al estado alto (inactivas).
+ * @brief Fuerza filas a estado lógico alto (inactivo).
  */
 static void setAllRowsHigh(void) {
     PORTB |= (1 << PB4) | (1 << PB3) | (1 << PB0);
@@ -44,11 +44,11 @@ static void setAllRowsHigh(void) {
 }
 
 /**
- * @brief Pone una única fila en estado bajo para su escaneo.
+ * @brief Establece una fila en estado bajo para escaneo.
  * @param row Índice de la fila (0 a 3).
  */
 static void setRowLow(uint8_t row) {
-    setAllRowsHigh(); // Primero asegurar que todas estén inactivas (HIGH)
+    setAllRowsHigh(); // Establece estado inactivo en todas las filas.
     
     switch(row) {
         case 0: PORTB &= ~(1 << PB4); break;
@@ -59,9 +59,9 @@ static void setRowLow(uint8_t row) {
 }
 
 /**
- * @brief Lee el estado lógico de una columna específica.
+ * @brief Lee estado lógico de columna.
  * @param col Índice de la columna (0 a 3).
- * @return 1 si la columna está en estado bajo (tecla presionada), 0 si está en alto.
+ * @return 1 si la columna está en estado bajo, 0 en caso contrario.
  */
 static uint8_t readCol(uint8_t col) {
     switch(col) {
@@ -74,24 +74,24 @@ static uint8_t readCol(uint8_t col) {
 }
 
 /**
- * @brief Realiza un escaneo completo de la matriz 4x4.
- * @return El caracter de la tecla detectada, o 0xFF si ninguna está presionada.
+ * @brief Escaneo matricial completo.
+ * @return Caracter de tecla detectada o 0xFF si no hay detección.
  */
 static uint8_t KeypadUpdate(void) {
     for (uint8_t row = 0; row < 4; row++) {
-        setRowLow(row); // Activar la fila actual (LOW)
-        _delay_us(10);  // Breve retardo para estabilización eléctrica de los pines
+        setRowLow(row); // Activa fila.
+        _delay_us(10);  // Retardo de estabilización eléctrica.
         
         for (uint8_t col = 0; col < 4; col++) {
-            if (readCol(col)) { // Si la columna lee 0, hay contacto físico
-                setAllRowsHigh(); // Restaurar filas antes de salir
+            if (readCol(col)) { // Detección de contacto.
+                setAllRowsHigh(); // Restaura estado de filas.
                 return keymap[row][col];
             }
         }
     }
     
     setAllRowsHigh();
-    return 0xFF; // Ninguna tecla detectada en toda la matriz
+    return 0xFF; // Sin detección de tecla.
 }
 
 // ==============================================================================
@@ -110,12 +110,12 @@ uint8_t KEYPAD_Scan(uint8_t *pkey) {
         return 0;
     }
     
-    // Lógica anti-rebote básica por muestreo consecutivo
+    // Lógica anti-rebote por muestreo consecutivo.
     if (Key == Old_key) { 
         if (Key != Last_valid_key) {
             *pkey = Key;
             Last_valid_key = Key;
-            return 1; // Nueva tecla validada
+            return 1; // Validación de tecla.
         }
     }
     
