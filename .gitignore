@@ -1,17 +1,10 @@
-# Control de Privacidad
-/*
-!.gitignore
-!README.md
-!/Practica/
-/Practica/*
-!/Practica/tp*/
-/Practica/tp*/*
-!/Practica/tp*/Entregas/
 *.workspace
 *[Aa]utosaved*.pdsprj
 *Backup*.pdsprj
+
 Debug/
 Release/
+
 *.o
 *.d
 *.obj
@@ -22,8 +15,10 @@ Release/
 *.map
 *.sym
 *.srec
+
 .vs/
 .vscode/
+
 *.user
 *.suo
 *.db
