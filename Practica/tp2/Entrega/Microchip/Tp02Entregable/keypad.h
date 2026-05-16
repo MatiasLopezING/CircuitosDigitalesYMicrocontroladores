@@ -9,8 +9,10 @@
 #ifndef KEYPAD_H_
 #define KEYPAD_H_
 
-uint8_t KEYPAD_Scan (uint8_t *pkey)
+#include <stdint.h>
+#include <avr/io.h>
 
-
+void KEYPAD_Init(void);
+uint8_t KEYPAD_Scan(uint8_t *pkey);
 
 #endif /* KEYPAD_H_ */

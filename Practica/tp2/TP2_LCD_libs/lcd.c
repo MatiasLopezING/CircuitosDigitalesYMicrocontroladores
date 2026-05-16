@@ -398,27 +398,6 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length)
 	}	
 }
 
-void LCD_PrintTime(uint8_t minutos, uint8_t segundos) {
-    char buffer[6];
-    buffer[0] = (minutos / 10) + '0';
-    buffer[1] = (minutos % 10) + '0';
-    buffer[2] = ':';
-    buffer[3] = (segundos / 10) + '0';
-    buffer[4] = (segundos % 10) + '0';
-    buffer[5] = '\0';
-    
-    LCDGotoXY(0, 0); // O puedes cambiar la posición si lo deseas
-    LCDstring((uint8_t*)buffer, 5);
-}
-
-void LCD_Parpadear(uint8_t estado) {
-    if (estado == 0) {
-        LCDblank();     // Comando 0x08
-    } else {
-        LCDvisible();   // Comando 0x0C
-    }
-}
-
 void LCD_Init() {
 	LCDinit();
 	LCDclr();

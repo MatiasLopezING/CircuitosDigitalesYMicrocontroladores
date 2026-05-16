@@ -22,7 +22,7 @@
 
 
 #define LCD_RS	1 	//define MCU pin connected to LCD RS
-#define LCD_RW	2 	//Reservado (En Proteus va a GND)
+#define LCD_RW	1 	//define MCU pin connected to LCD R/W
 #define LCD_E	0	//define MCU pin connected to LCD E
 #define LCD_D0	0	//define MCU pin connected to LCD D0
 #define LCD_D1	1	//define MCU pin connected to LCD D1
@@ -46,7 +46,7 @@ Data es el dato de 8 bits a escribir.
 */
 
 #define LCD_DATAWR(Data) PORTB = (PORTB & 0xF9) | ((Data & (1<<6)) >> 4) | ((Data & (1<<7)) >> 6);\
-PORTC = (PORTC & 0xF9) | ((Data & (1<<4)) >> 3) | ((Data & (1<<5)) >> 3);
+	                     PORTC = (PORTC & 0xF9) | ((Data & (1<<4)) >> 3) | ((Data & (1<<5)) >> 3);
 //----------------------------------------------------------------------------------------------------
 
 #define LCD_CLR             0	//DB0: clear display
@@ -89,7 +89,7 @@ void LCDhome(void);			//LCD cursor home
 void LCDstring(uint8_t*, uint8_t);	//Outputs string to LCD
 void LCDGotoXY(uint8_t, uint8_t);	//Cursor to X Y position
 void CopyStringtoLCD(const uint8_t*, uint8_t, uint8_t);//copies flash string to LCD at x,y
-void LCDdefinechar(const uint8_t *,uint8_t);//write char to LCD CGRAM
+void LCDdefinechar(const uint8_t *,uint8_t);//write char to LCD CGRAM 
 void LCDshiftRight(uint8_t);	//shift by n characters Right
 void LCDshiftLeft(uint8_t);	//shift by n characters Left
 void LCDcursorOn(void);		//Underline cursor ON
@@ -108,32 +108,8 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length);
 void LCD_Init();
 void LCD_Update();
 
-// --------------------------------------------- //
-void LCD_Resetear() {
-    LCDclr();
-    LCDGotoXY(0,0);
-    LCDstring((uint8_t*)"00:00", 5);
-}
-uint8_t LCD_LeerTiempo(); //Devuelve los segundos restantes de la cuenta MM:SS 
-void LCD_Actualizar(uint16_t seg) { //Muestra (seg) en formato MM:SS
-    uint8_t minutos = seg / 60;
-    uint8_t segundos = seg % 60;
-    
-    char buffer[6]; // "MM:SS" \0
-    // Formatear la cadena para que siempre tenga 2 dígitos (ej. 01:05)
-    buffer[0] = (minutos / 10) + '0';
-    buffer[1] = (minutos % 10) + '0';
-    buffer[2] = ':';
-    buffer[3] = (segundos / 10) + '0';
-    buffer[4] = (segundos % 10) + '0';
-    buffer[5] = '\0';
-    
-    LCDGotoXY(0, 0); // Ir a la primer fila
-    LCDstring((uint8_t*)buffer, 5);
-}
 
-void LCD_PrintTime(uint8_t minutos, uint8_t segundos); // Muestra MM:SS
-void LCD_Parpadear(uint8_t estado); // 0 = apagar, 1 = encender
+
 
 #endif
 
