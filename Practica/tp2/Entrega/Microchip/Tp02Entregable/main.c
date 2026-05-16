@@ -1,67 +1,79 @@
 #undef F_CPU
 #define F_CPU 8000000UL
+
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/wdt.h>
+#include <avr/interrupt.h>
+
 #include "lcd.h"
 #include "keypad.h"
 #include "actuadores.h"
-#include <avr/wdt.h> // Incluimos la libreria del Watchdog
+#include "timer.h"
 
 int main(void) {
-    // 0. MATAMOS AL PERRO GUARDIAN INMEDIATAMENTE AL ARRANCAR
-    MCUSR = 0;      // Limpiamos banderas de reset previo
-    wdt_disable();  // Desactivamos el WDT para que no reinicie el chip
+    // Desactivar Watchdog Timer por seguridad
+    MCUSR = 0;
+    wdt_disable();
     
-    _delay_ms(100); // 1. Retardo para que estabilicen las señales de Proteus/Placa al encender
-    KEYPAD_Init();
+    // Retardo inicial de estabilizacion
+    _delay_ms(100);
+
+    // Inicializacion de perifericos
     ACTUADORES_Init();
-    LCD_Init(); // Mantenemos la inicializacion del LCD al final
+    KEYPAD_Init();
+    TIMER_Init();
+    LCD_Init();
+    
+    // Habilitar interrupciones globales
+    sei();
+    
+    // Interfaz inicial
+    LCD_Resetear(); // Imprime "00:00" en pantalla
+    
+    uint8_t tecla;
 
-    _delay_ms(50); // 2. Retardo extra para asegurar que el LCD terminó de configurarse internamente
-
-    uint8_t tecla_pulsada;
-
-    // Imprimimos el texto fijo una sola vez (forzamos posición 0,0 por las dudas)
-    LCDGotoXY(0, 0);
-    LCDstring((uint8_t*)"Tecla: ", 7);
-
+    // Bucle principal: Prueba de integracion de hardware (sin MEF)
     while(1) {
-        // Escaneamos el teclado
-        if (KEYPAD_Scan(&tecla_pulsada) == 1) { 
+        
+        // 1. Escaneo no bloqueante del teclado matricial
+        if (KEYPAD_Scan(&tecla)) {
             
-            // Nos posicionamos justo despues de "Tecla: " (columna 7, fila 0)
-            // para pisar solo la letra en lugar de limpiar toda la pantalla
-            LCDGotoXY(7, 0);
-            LCDsendChar(tecla_pulsada); // Muestra el caracter ASCII en el LCD
-
-            // Jugamos con los actuadores segun la tecla
-            switch(tecla_pulsada) {
-                case '1':
+            // Feedback visual en el LCD
+            LCDclr();
+            LCDGotoXY(0, 0);
+            LCDstring((uint8_t*)"Tecla: ", 7);
+            LCDsendChar(tecla);
+            
+            // Prueba de actuadores segun requerimientos del TP
+            switch(tecla) {
+                case 'A': // START: Enciende magnetron y luz
                     MAGNETRON_On();
-                    break;
-                case '2':
-                    MAGNETRON_Off();
-                    break;
-                case '4':
                     LUZ_On();
                     break;
-                case '5':
-                    LUZ_Off();
-                    break;
-                case '7':
-                    ALARMA_Toggle(); // Cambia de estado
-                    break;
-                case '0':
-                    // Boton de panico: apaga todo
+                case 'B': // STOP/CLEAR: Apaga todo y resetea
                     MAGNETRON_Off();
                     LUZ_Off();
-                    ALARMA_Off(); 
+                    ALARMA_Off();
+                    LCD_Resetear();
+                    break;
+                case 'C': // +30 SEG: Toggle de alarma para probar
+                    ALARMA_Toggle();
+                    break;
+                case 'D': // PUERTA: Apaga magnetron por seguridad
+                    MAGNETRON_Off();
                     break;
             }
         }
         
-        // Pequeno delay de lazo para que la lectura no sature
-        _delay_ms(10);
+        // 2. Base de tiempos de 1 segundo (gobernada por el Timer0)
+        if (flag_actualizar_lcd == 1) {
+            flag_actualizar_lcd = 0;
+            // (Reservado para actualizar el cronometro del microondas)
+        }
+        
+        _delay_ms(10); // Retardo para estabilizar el barrido
     }
+
     return 0;
 }

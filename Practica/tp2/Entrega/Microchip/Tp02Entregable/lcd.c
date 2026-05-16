@@ -458,7 +458,11 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length)
 // Funciones de Alto Nivel (Lógica de Aplicación)
 // ==============================================================================
 
-void LCD_PrintTime(uint8_t minutos, uint8_t segundos) {
+/**
+ * @brief Muestra el tiempo en formato MM:SS en la pantalla.
+ * @param minutos Minutos a mostrar.
+ * @param segundos Segundos a mostrar.
+ */
     char buffer[6];
     buffer[0] = (minutos / 10) + '0';
     buffer[1] = (minutos % 10) + '0';
@@ -471,6 +475,10 @@ void LCD_PrintTime(uint8_t minutos, uint8_t segundos) {
     LCDstring((uint8_t*)buffer, 5);
 }
 
+/**
+ * @brief Enciende o apaga el display completamente.
+ * @param estado 0 = apaga el display, 1 = lo enciende.
+ */
 void LCD_Parpadear(uint8_t estado) {
     if (estado == 0) {
         LCDblank();     // Comando 0x08
@@ -479,6 +487,9 @@ void LCD_Parpadear(uint8_t estado) {
     }
 }
 
+/**
+ * @brief Secuencia principal de inicializacion del LCD.
+ */
 void LCD_Init() {
 	LCDinit();
 	LCDclr();
@@ -498,13 +509,20 @@ void LCD_Update(){
 }
 */
 
+/**
+ * @brief Limpia la pantalla y la inicializa con el reloj en 00:00.
+ */
 void LCD_Resetear(void) {
     LCDclr();
     LCDGotoXY(0,0);
     LCDstring((uint8_t*)"00:00", 5);
 }
 
-void LCD_Actualizar(uint16_t seg) { //Muestra (seg) en formato MM:SS
+/**
+ * @brief Convierte un tiempo total en segundos al formato "MM:SS" y lo imprime.
+ * @param seg Tiempo total en segundos.
+ */
+void LCD_Actualizar(uint16_t seg) {
     uint8_t minutos = seg / 60;
     uint8_t segundos = seg % 60;
     
