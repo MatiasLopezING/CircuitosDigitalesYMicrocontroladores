@@ -2,6 +2,8 @@
 #include "keypad.h"
 #include <stdbool.h>
 
+#if 0 // ---------- INICIO CÓDIGO DEL AMIGO COMENTADO ----------
+
 static state EstadoActual;
 static uint16_t Ticks1s = 0;
 static uint8_t SegundosRestantes=0;
@@ -96,4 +98,15 @@ void FSM_Update(void)
 	}
 	
 	ActualizarSalidas(EstadoActual); //Segun el estado actualizo las salidas
+}
+
+#endif // ---------- FIN CÓDIGO DEL AMIGO COMENTADO ----------
+
+// Funciones "mock" o vacías para que compile el Main sin errores
+void FSM_Init(void) { 
+	// Vacío temporalmente para probar periféricos
+}
+
+void FSM_Update(void) {
+	// Vacío temporalmente para probar periféricos
 }

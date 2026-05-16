@@ -76,10 +76,10 @@ void LCDinit(void)
 	//4 bit part
 	_delay_ms(30);
 	LCD_DATAWR(0x00);	
-	LCP=0x00;
+	LCP &= ~((1<<LCD_E) | (1<<LCD_RS));
 	LDDR1|=1<<LCD_D7|1<<LCD_D6;
 	LDDR2|=1<<LCD_D4|1<<LCD_D5;
-	LCDR|=1<<LCD_E|1<<LCD_RW|1<<LCD_RS;
+	LCDR |= (1<<LCD_E) | (1<<LCD_RS);
    //---------one------
 	LCD_DATAWR(0b00110000);	
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
@@ -116,10 +116,10 @@ void LCDinit(void)
 	//8 bit LCD interface
 	_delay_ms(15);
 	LDP=0x00;
-	LCP=0x00;
+	LCP &= ~((1<<LCD_E) | (1<<LCD_RS));
 	LDDR|=1<<LCD_D7|1<<LCD_D6|1<<LCD_D5|1<<LCD_D4|1<<LCD_D3
 			|1<<LCD_D2|1<<LCD_D1|1<<LCD_D0;
-	LCDR|=1<<LCD_E|1<<LCD_RW|1<<LCD_RS;
+	LCDR |= (1<<LCD_E) | (1<<LCD_RS);
    //---------one------
 	LDP=0<<LCD_D7|0<<LCD_D6|1<<LCD_D5|1<<LCD_D4|0<<LCD_D3
 			|0<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
@@ -437,3 +437,27 @@ void LCD_Update(){
 	LCDhome();
 }
 */
+
+void LCD_Resetear(void) {
+    LCDclr();
+    LCDGotoXY(0,0);
+    LCDstring((uint8_t*)"00:00", 5);
+}
+
+void LCD_Actualizar(uint16_t seg) { //Muestra (seg) en formato MM:SS
+    uint8_t minutos = seg / 60;
+    uint8_t segundos = seg % 60;
+    
+    char buffer[6]; // "MM:SS" \0
+    // Formatear la cadena para que siempre tenga 2 dígitos (ej. 01:05)
+    buffer[0] = (minutos / 10) + '0';
+    buffer[1] = (minutos % 10) + '0';
+    buffer[2] = ':';
+    buffer[3] = (segundos / 10) + '0';
+    buffer[4] = (segundos % 10) + '0';
+    buffer[5] = '\0';
+    
+    LCDGotoXY(0, 0); // Ir a la primer fila
+    LCDstring((uint8_t*)buffer, 5);
+}
+

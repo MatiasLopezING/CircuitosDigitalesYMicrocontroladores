@@ -109,28 +109,9 @@ void LCD_Init();
 void LCD_Update();
 
 // --------------------------------------------- //
-void LCD_Resetear() {
-    LCDclr();
-    LCDGotoXY(0,0);
-    LCDstring((uint8_t*)"00:00", 5);
-}
-uint8_t LCD_LeerTiempo(); //Devuelve los segundos restantes de la cuenta MM:SS 
-void LCD_Actualizar(uint16_t seg) { //Muestra (seg) en formato MM:SS
-    uint8_t minutos = seg / 60;
-    uint8_t segundos = seg % 60;
-    
-    char buffer[6]; // "MM:SS" \0
-    // Formatear la cadena para que siempre tenga 2 dígitos (ej. 01:05)
-    buffer[0] = (minutos / 10) + '0';
-    buffer[1] = (minutos % 10) + '0';
-    buffer[2] = ':';
-    buffer[3] = (segundos / 10) + '0';
-    buffer[4] = (segundos % 10) + '0';
-    buffer[5] = '\0';
-    
-    LCDGotoXY(0, 0); // Ir a la primer fila
-    LCDstring((uint8_t*)buffer, 5);
-}
+void LCD_Resetear(void);
+uint8_t LCD_LeerTiempo(void); //Devuelve los segundos restantes de la cuenta MM:SS 
+void LCD_Actualizar(uint16_t seg); //Muestra (seg) en formato MM:SS
 
 void LCD_PrintTime(uint8_t minutos, uint8_t segundos); // Muestra MM:SS
 void LCD_Parpadear(uint8_t estado); // 0 = apagar, 1 = encender
