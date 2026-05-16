@@ -13,7 +13,14 @@ const uint8_t LcdCustomChar[] PROGMEM=
 	0x18, 0x1C, 0x1E, 0x1F, 0x1E, 0x1C, 0x18, 0x00  // 7. fast-forward arrow
 };
 
-//Sends Char to LCD
+// ==============================================================================
+// Funciones de Transmisión de Bajo Nivel
+// ==============================================================================
+
+/**
+ * @brief Envía un caracter ASCII al LCD.
+ * @param ch Caracter a enviar.
+ */
 void LCDsendChar(uint8_t ch){
 
 #ifdef LCD_4bit
@@ -21,60 +28,69 @@ void LCDsendChar(uint8_t ch){
 	LCD_DATAWR(ch&0b11110000);
 	LCP|=1<<LCD_RS;
 	LCP|=1<<LCD_E;		
-	_delay_us(40);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);	
 	LCP&=~(1<<LCD_RS);
-	_delay_us(40);
+	_delay_us(50);
 	LCD_DATAWR((ch&0b00001111)<<4);
 	LCP|=1<<LCD_RS;
 	LCP|=1<<LCD_E;		
-	_delay_us(40);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);	
 	LCP&=~(1<<LCD_RS);
-	_delay_us(40);
+	_delay_us(50);
 #else
 	//8 bit part
 	LDP=ch;
 	LCP|=1<<LCD_RS;
 	LCP|=1<<LCD_E;		
-	_delay_us(40);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);	
 	LCP&=~(1<<LCD_RS);
-	_delay_us(40);
+	_delay_us(50);
 #endif
 }
 
-//Sends Command to LCD
+/**
+ * @brief Envía un comando de control al LCD.
+ * @param cmd Código del comando (ej. 0x01 para limpiar).
+ */
 void LCDsendCommand(uint8_t cmd)	
 {
 #ifdef LCD_4bit	
 	//4 bit part
 	LCD_DATAWR(cmd&0b11110000);
 	LCP|=1<<LCD_E;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);	
+	_delay_us(50);	
 	LCD_DATAWR((cmd&0b00001111)<<4);	
 	LCP|=1<<LCD_E;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);
+	_delay_us(50);
 #else
 	//8 bit part
 	LDP=cmd;
 	LCP|=1<<LCD_E;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);	
+	_delay_us(50);	
 #endif
 }
 
-//Initializes LCD
+// ==============================================================================
+// Inicialización del Hardware
+// ==============================================================================
+
+/**
+ * @brief Inicializa el controlador HD44780 respetando los tiempos del datasheet.
+ */
 void LCDinit(void)
 {
 #ifdef LCD_4bit	
 	//4 bit part
-	_delay_ms(30);
+	_delay_ms(40);
 	LCD_DATAWR(0x00);	
 	LCP &= ~((1<<LCD_E) | (1<<LCD_RS));
 	LDDR1|=1<<LCD_D7|1<<LCD_D6;
@@ -83,23 +99,31 @@ void LCDinit(void)
    //---------one------
 	LCD_DATAWR(0b00110000);	
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);
+	_delay_ms(5); // Retardo mayor a 4.1ms segun datasheet
 	//-----------two-----------
 	
 	LCD_DATAWR(0b00110000);	
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);
+	_delay_us(150); // Retardo mayor a 100 us
 	//-------three-------------
+
+	LCD_DATAWR(0b00110000);	
+	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
+	_delay_us(1);
+	LCP&=~(1<<LCD_E);
+	_delay_us(50);
+	
+	//-------four (set 4-bit)-------------
 
 	LCD_DATAWR(0b00100000);	
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);
+	_delay_us(50);
 	//--------4 bit--dual line---------------
 	LCDsendCommand(0b00101000);
    //-----increment address, invisible cursor shift------
@@ -114,7 +138,7 @@ void LCDinit(void)
 
 #else
 	//8 bit LCD interface
-	_delay_ms(15);
+	_delay_ms(40);
 	LDP=0x00;
 	LCP &= ~((1<<LCD_E) | (1<<LCD_RS));
 	LDDR|=1<<LCD_D7|1<<LCD_D6|1<<LCD_D5|1<<LCD_D4|1<<LCD_D3
@@ -124,37 +148,37 @@ void LCDinit(void)
 	LDP=0<<LCD_D7|0<<LCD_D6|1<<LCD_D5|1<<LCD_D4|0<<LCD_D3
 			|0<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);
+	_delay_ms(5); // Retardo mayor a 4.1ms segun datasheet
 	//-----------two-----------
 	LDP=0<<LCD_D7|0<<LCD_D6|1<<LCD_D5|1<<LCD_D4|0<<LCD_D3
 			|0<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);
+	_delay_us(150);
 	//-------three-------------
 	LDP=0<<LCD_D7|0<<LCD_D6|1<<LCD_D5|1<<LCD_D4|0<<LCD_D3
 			|0<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);
+	_delay_us(50);
 	//--------8 bit dual line----------
 	LDP=0<<LCD_D7|0<<LCD_D6|1<<LCD_D5|1<<LCD_D4|1<<LCD_D3
 			|0<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(1);
+	_delay_us(50);
    //-----increment address, invisible cursor shift------
 	LDP=0<<LCD_D7|0<<LCD_D6|0<<LCD_D5|0<<LCD_D4|1<<LCD_D3
 			|1<<LCD_D2|0<<LCD_D1|0<<LCD_D0; //8 it mode
 	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_ms(1);
+	_delay_us(1);
 	LCP&=~(1<<LCD_E);
-	_delay_ms(5);
+	_delay_ms(2);
 		//init custom chars
 	uint8_t ch=0, chn=0;
 	while(ch<64)
@@ -166,16 +190,24 @@ void LCDinit(void)
 #endif
 }
 
-//Clears LCD
+// ==============================================================================
+// Funciones de Formato y Posición
+// ==============================================================================
+
+/**
+ * @brief Limpia toda la pantalla (Toma ~1.52 ms).
+ */
 void LCDclr(void)				
 {
 	LCDsendCommand(1<<LCD_CLR);
+	_delay_ms(2); // El comando toma ~1.52ms
 }
 
 //LCD cursor home
 void LCDhome(void)			
 {
 	LCDsendCommand(1<<LCD_HOME);
+	_delay_ms(2); // El comando toma ~1.52ms
 }
 
 //Outputs string to LCD
@@ -284,6 +316,10 @@ void LCDcursorOFF(void)
 {
 	LCDsendCommand(0x0C);
 }
+
+// ==============================================================================
+// Funciones Adicionales
+// ==============================================================================
 
 //blanks LCD
 void LCDblank(void)		
@@ -397,6 +433,10 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length)
 		LCDsendChar(c);
 	}	
 }
+
+// ==============================================================================
+// Funciones de Alto Nivel (Lógica de Aplicación)
+// ==============================================================================
 
 void LCD_PrintTime(uint8_t minutos, uint8_t segundos) {
     char buffer[6];

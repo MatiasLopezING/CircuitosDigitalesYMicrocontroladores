@@ -1,121 +1,146 @@
+/**
+ * @file lcd.h
+ * @brief Librería para el control de un display LCD HD44780.
+ * 
+ * Configurado para interfaz de 4 bits. Contiene las definiciones de pines,
+ * comandos básicos de bajo nivel y funciones de alto nivel para escritura.
+ */
+
 #ifndef LCD_H
 #define LCD_H
 
-
 #include <avr/io.h>
-// Oscillator / resonator frequency (in Hz)
-#undef F_CPU
-#define F_CPU 8000000UL		// 8 MHz
-// Delays perdiendo tiempo del uC
 #include <util/delay.h>
-// Tipos de datos enteros estandar
 #include <stdint.h>
-// Manejo de caracteres y mas
 #include <stdlib.h>
 #include <inttypes.h>
 #include <avr/pgmspace.h>
 
-//Uncomment this if LCD 4 bit interface is used
-//******************************************
-#define LCD_4bit
-//***********************************************
-
-
-
-#define LCD_RS	1 	//define MCU pin connected to LCD RS
-#define LCD_RW	2 	//Reservado (En Proteus va a GND)
-#define LCD_E	0	//define MCU pin connected to LCD E
-#define LCD_D0	0	//define MCU pin connected to LCD D0
-#define LCD_D1	1	//define MCU pin connected to LCD D1
-#define LCD_D2	2	//define MCU pin connected to LCD D1
-#define LCD_D3	3	//define MCU pin connected to LCD D2
-#define LCD_D4	1	//define MCU pin connected to LCD D3
-#define LCD_D5	2	//define MCU pin connected to LCD D4
-#define LCD_D6	2	//define MCU pin connected to LCD D5
-#define LCD_D7	1	//define MCU pin connected to LCD D6
-#define LDP1 PORTB	//define MCU port connected to LCD data pins
-#define LDP2 PORTC	//define MCU port connected to LCD data pins
-#define LCP PORTD	//define MCU port connected to LCD control pins
-#define LDDR1 DDRB	//define MCU direction register for port connected to LCD data pins
-#define LDDR2 DDRC	//define MCU direction register for port connected to LCD data pins
-#define LCDR DDRD	//define MCU direction register for port connected to LCD control pins
-
-//--------------------------------------------------------------------------------------------------
-/*Macro para escribir en los puertos conectados al LCD.
-Data es el dato de 8 bits a escribir.
-"PORTX=...((Data & (1<<Y)) >> Z) |..." Escribe el bit Y de Data en el bit Y-Z del puerto X
-*/
-
-#define LCD_DATAWR(Data) PORTB = (PORTB & 0xF9) | ((Data & (1<<6)) >> 4) | ((Data & (1<<7)) >> 6);\
-PORTC = (PORTC & 0xF9) | ((Data & (1<<4)) >> 3) | ((Data & (1<<5)) >> 3);
-//----------------------------------------------------------------------------------------------------
-
-#define LCD_CLR             0	//DB0: clear display
-#define LCD_HOME            1	//DB1: return to home position
-#define LCD_ENTRY_MODE      2	//DB2: set entry mode
-#define LCD_ENTRY_INC       1	//DB1: increment
-#define LCD_ENTRY_SHIFT     0	//DB2: shift
-#define LCD_ON_CTRL         3	//DB3: turn lcd/cursor on
-#define LCD_ON_DISPLAY      2	//DB2: turn display on
-#define LCD_ON_CURSOR       1	//DB1: turn cursor on
-#define LCD_ON_BLINK        0	//DB0: blinking cursor
-#define LCD_MOVE            4	//DB4: move cursor/display
-#define LCD_MOVE_DISP       3	//DB3: move display (0-> move cursor)
-#define LCD_MOVE_RIGHT      2	//DB2: move right (0-> left)
-#define LCD_FUNCTION        5	//DB5: function set
-#define LCD_FUNCTION_8BIT   4	//DB4: set 8BIT mode (0->4BIT mode)
-#define LCD_FUNCTION_2LINES 3	//DB3: two lines (0->one line)
-#define LCD_FUNCTION_10DOTS 2	//DB2: 5x10 font (0->5x7 font)
-#define LCD_CGRAM           6	//DB6: set CG RAM address
-#define LCD_DDRAM           7	//DB7: set DD RAM address
-// reading:
-#define LCD_BUSY            7	//DB7: LCD is busy
-#define LCD_LINES			2	//visible lines
-#define LCD_LINE_LENGTH		16	//line length (in characters)
-// cursor position to DDRAM mapping
-#define LCD_LINE0_DDRAMADDR		0x00
-#define LCD_LINE1_DDRAMADDR		0x40
-#define LCD_LINE2_DDRAMADDR		0x14
-#define LCD_LINE3_DDRAMADDR		0x54
-// progress bar defines
-#define PROGRESSPIXELS_PER_CHAR	6
-
-
-void LCDescribeDato(int val,unsigned int field_length); // Agrego Funcion para escribir Enteros
-void LCDsendChar(uint8_t);		//forms data ready to send to 74HC164
-void LCDsendCommand(uint8_t);	//forms data ready to send to 74HC164
-void LCDinit(void);			//Initializes LCD
-void LCDclr(void);				//Clears LCD
-void LCDhome(void);			//LCD cursor home
-void LCDstring(uint8_t*, uint8_t);	//Outputs string to LCD
-void LCDGotoXY(uint8_t, uint8_t);	//Cursor to X Y position
-void CopyStringtoLCD(const uint8_t*, uint8_t, uint8_t);//copies flash string to LCD at x,y
-void LCDdefinechar(const uint8_t *,uint8_t);//write char to LCD CGRAM
-void LCDshiftRight(uint8_t);	//shift by n characters Right
-void LCDshiftLeft(uint8_t);	//shift by n characters Left
-void LCDcursorOn(void);		//Underline cursor ON
-void LCDcursorOnBlink(void);	//Underline blinking cursor ON
-void LCDcursorOFF(void);		//Cursor OFF
-void LCDblank(void);			//LCD blank but not cleared
-void LCDvisible(void);			//LCD visible
-void LCDcursorLeft(uint8_t);	//Shift cursor left by n
-void LCDcursorRight(uint8_t);	//shif cursor right by n
-// displays a horizontal progress bar at the current cursor location
-// <progress> is the value the bargraph should indicate
-// <maxprogress> is the value at the end of the bargraph
-// <length> is the number of LCD characters that the bargraph should cover
-//adapted from AVRLIB - displays progress only for 8 bit variables
-void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length);
-void LCD_Init();
-void LCD_Update();
-
-// --------------------------------------------- //
-void LCD_Resetear(void);
-uint8_t LCD_LeerTiempo(void); //Devuelve los segundos restantes de la cuenta MM:SS 
-void LCD_Actualizar(uint16_t seg); //Muestra (seg) en formato MM:SS
-
-void LCD_PrintTime(uint8_t minutos, uint8_t segundos); // Muestra MM:SS
-void LCD_Parpadear(uint8_t estado); // 0 = apagar, 1 = encender
-
+#ifndef F_CPU
+#define F_CPU 8000000UL // Frecuencia de reloj: 8 MHz
 #endif
+
+// Activar interfaz de 4 bits
+#define LCD_4bit
+
+// ==============================================================================
+// Definición de Pines y Puertos
+// ==============================================================================
+
+#define LCD_RS 1    // Pin MCU conectado a LCD RS (PD1)
+#define LCD_RW 2    // Reservado (En Proteus va a GND)
+#define LCD_E  0    // Pin MCU conectado a LCD E (PD0)
+
+#define LCD_D4 1    // Pin MCU conectado a LCD D4 (PC1)
+#define LCD_D5 2    // Pin MCU conectado a LCD D5 (PC2)
+#define LCD_D6 2    // Pin MCU conectado a LCD D6 (PB2)
+#define LCD_D7 1    // Pin MCU conectado a LCD D7 (PB1)
+
+// Definición de Puertos
+#define LDP1  PORTB // Puerto MCU conectado a datos altos
+#define LDP2  PORTC // Puerto MCU conectado a datos bajos
+#define LCP   PORTD // Puerto MCU conectado a pines de control
+#define LDDR1 DDRB  // Registro de dirección (datos altos)
+#define LDDR2 DDRC  // Registro de dirección (datos bajos)
+#define LCDR  DDRD  // Registro de dirección (control)
+
+/**
+ * @brief Macro para escribir en los puertos conectados al LCD.
+ * Asigna los bits 4,5,6 y 7 del dato a los pines físicos configurados.
+ */
+#define LCD_DATAWR(Data) \
+    PORTB = (PORTB & 0xF9) | (((Data) & (1<<6)) >> 4) | (((Data) & (1<<7)) >> 6); \
+    PORTC = (PORTC & 0xF9) | (((Data) & (1<<4)) >> 3) | (((Data) & (1<<5)) >> 3);
+
+// ==============================================================================
+// Comandos estándar del LCD HD44780
+// ==============================================================================
+
+#define LCD_CLR             0
+#define LCD_HOME            1
+#define LCD_ENTRY_MODE      2
+#define LCD_ENTRY_INC       1
+#define LCD_ENTRY_SHIFT     0
+#define LCD_ON_CTRL         3
+#define LCD_ON_DISPLAY      2
+#define LCD_ON_CURSOR       1
+#define LCD_ON_BLINK        0
+#define LCD_MOVE            4
+#define LCD_MOVE_DISP       3
+#define LCD_MOVE_RIGHT      2
+#define LCD_FUNCTION        5
+#define LCD_FUNCTION_8BIT   4
+#define LCD_FUNCTION_2LINES 3
+#define LCD_FUNCTION_10DOTS 2
+#define LCD_CGRAM           6
+#define LCD_DDRAM           7
+
+#define LCD_BUSY            7
+#define LCD_LINES           2
+#define LCD_LINE_LENGTH     16
+
+#define LCD_LINE0_DDRAMADDR 0x00
+#define LCD_LINE1_DDRAMADDR 0x40
+#define LCD_LINE2_DDRAMADDR 0x14
+#define LCD_LINE3_DDRAMADDR 0x54
+
+#define PROGRESSPIXELS_PER_CHAR 6
+
+// ==============================================================================
+// Funciones de Bajo Nivel
+// ==============================================================================
+
+void LCDsendChar(uint8_t);
+void LCDsendCommand(uint8_t);
+void LCDinit(void);
+void LCDclr(void);
+void LCDhome(void);
+void LCDstring(uint8_t*, uint8_t);
+void LCDGotoXY(uint8_t, uint8_t);
+void CopyStringtoLCD(const uint8_t*, uint8_t, uint8_t);
+void LCDdefinechar(const uint8_t *, uint8_t);
+void LCDshiftRight(uint8_t);
+void LCDshiftLeft(uint8_t);
+void LCDcursorOn(void);
+void LCDcursorOnBlink(void);
+void LCDcursorOFF(void);
+void LCDblank(void);
+void LCDvisible(void);
+void LCDcursorLeft(uint8_t);
+void LCDcursorRight(uint8_t);
+void LCDescribeDato(int val, unsigned int field_length);
+void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length);
+
+// ==============================================================================
+// Funciones de Alto Nivel (Aplicación Principal)
+// ==============================================================================
+
+/**
+ * @brief Inicializa el hardware del LCD y limpia la pantalla.
+ */
+void LCD_Init(void);
+
+/**
+ * @brief Resetea la cuenta en el display a "00:00".
+ */
+void LCD_Resetear(void);
+
+/**
+ * @brief Actualiza la pantalla mostrando los segundos en formato "MM:SS".
+ * @param seg Tiempo total en segundos a mostrar.
+ */
+void LCD_Actualizar(uint16_t seg);
+
+/**
+ * @brief Imprime un tiempo dado en formato "MM:SS" en la primera línea.
+ */
+void LCD_PrintTime(uint8_t minutos, uint8_t segundos);
+
+/**
+ * @brief Enciende o apaga el display completamente sin perder los datos en memoria.
+ * @param estado 0 = apagar, 1 = encender.
+ */
+void LCD_Parpadear(uint8_t estado);
+
+#endif /* LCD_H */
 
