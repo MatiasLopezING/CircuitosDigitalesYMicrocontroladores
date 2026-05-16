@@ -89,3 +89,12 @@ return 1;
 Old_key = Key;
 return 0;
 }
+
+// Función wrapper para devolver directamente el caracter ASCII si se presiona una tecla
+uint8_t KEYPAD_GetKey(void) {
+    uint8_t key;
+    if (KEYPAD_Scan(&key)) {
+        return key; // Devuelve '1', 'A', 'D', etc.
+    }
+    return 0; // 0 significa que no se presionó nada nuevo
+}

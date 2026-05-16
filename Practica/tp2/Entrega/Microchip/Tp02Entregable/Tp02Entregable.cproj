@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="14.0">
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>
@@ -120,6 +120,12 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="actuadores.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="actuadores.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="keypad.c">
       <SubType>compile</SubType>
     </Compile>
@@ -139,6 +145,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="mef.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="timer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="timer.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

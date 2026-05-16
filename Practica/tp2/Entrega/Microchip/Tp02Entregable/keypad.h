@@ -14,5 +14,6 @@
 
 void KEYPAD_Init(void);
 uint8_t KEYPAD_Scan(uint8_t *pkey);
+uint8_t KEYPAD_GetKey(void); // Retorna el caracter ASCII o 0 si no hay tecla presionada
 
 #endif /* KEYPAD_H_ */

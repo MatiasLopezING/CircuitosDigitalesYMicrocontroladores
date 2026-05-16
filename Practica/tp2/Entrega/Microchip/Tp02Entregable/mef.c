@@ -2,7 +2,7 @@
 #include "keypad.h"
 #include <stdbool.h>
 
-#if 0 // ---------- INICIO CÓDIGO DEL AMIGO COMENTADO ----------
+#if 0 // Bloque comentado temporalmente por errores de sintaxis a resolver
 
 static state EstadoActual;
 static uint16_t Ticks1s = 0;
@@ -100,13 +100,11 @@ void FSM_Update(void)
 	ActualizarSalidas(EstadoActual); //Segun el estado actualizo las salidas
 }
 
-#endif // ---------- FIN CÓDIGO DEL AMIGO COMENTADO ----------
+#endif // Fin bloque comentado
 
-// Funciones "mock" o vacías para que compile el Main sin errores
+// Implementaciones temporales (stubs) para permitir la compilación del módulo principal
 void FSM_Init(void) { 
-	// Vacío temporalmente para probar periféricos
 }
 
 void FSM_Update(void) {
-	// Vacío temporalmente para probar periféricos
 }
