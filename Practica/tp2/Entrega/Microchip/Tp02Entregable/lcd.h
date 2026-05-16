@@ -9,16 +9,16 @@
 #ifndef LCD_H
 #define LCD_H
 
+#ifndef F_CPU
+#define F_CPU 8000000UL // Frecuencia de reloj: 8 MHz
+#endif
+
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <avr/pgmspace.h>
-
-#ifndef F_CPU
-#define F_CPU 8000000UL // Frecuencia de reloj: 8 MHz
-#endif
 
 // Activar interfaz de 4 bits
 #define LCD_4bit

@@ -24,30 +24,31 @@ const uint8_t LcdCustomChar[] PROGMEM=
 void LCDsendChar(uint8_t ch){
 
 #ifdef LCD_4bit
-   //4 bit part
-	LCD_DATAWR(ch&0b11110000);
-	LCP|=1<<LCD_RS;
+    // ENCIENDE RS: Le avisa al LCD que es una letra (VITAL)
+    LCP |= (1<<LCD_RS); 
+    
+    // Mitad ALTA
+	LCD_DATAWR(ch & 0b11110000);
 	LCP|=1<<LCD_E;		
-	_delay_us(1);
-	LCP&=~(1<<LCD_E);	
-	LCP&=~(1<<LCD_RS);
 	_delay_us(50);
-	LCD_DATAWR((ch&0b00001111)<<4);
-	LCP|=1<<LCD_RS;
+	LCP&=~(1<<LCD_E);	
+	_delay_ms(1);
+	
+	// Mitad BAJA
+	LCD_DATAWR((ch & 0b00001111)<<4);
 	LCP|=1<<LCD_E;		
-	_delay_us(1);
-	LCP&=~(1<<LCD_E);	
-	LCP&=~(1<<LCD_RS);
 	_delay_us(50);
+	LCP&=~(1<<LCD_E);	
+	_delay_ms(2); // Retardo MUY generoso para Proteus
 #else
 	//8 bit part
 	LDP=ch;
 	LCP|=1<<LCD_RS;
 	LCP|=1<<LCD_E;		
-	_delay_us(1);
+	_delay_us(2);
 	LCP&=~(1<<LCD_E);	
 	LCP&=~(1<<LCD_RS);
-	_delay_us(50);
+	_delay_us(100);
 #endif
 }
 
@@ -58,24 +59,40 @@ void LCDsendChar(uint8_t ch){
 void LCDsendCommand(uint8_t cmd)	
 {
 #ifdef LCD_4bit	
-	//4 bit part
-	LCD_DATAWR(cmd&0b11110000);
+    // APAGA RS: Le avisa al LCD que es un comando (VITAL)
+    LCP &= ~(1<<LCD_RS); 
+    
+	// Mitad ALTA
+	LCD_DATAWR(cmd & 0b11110000);
 	LCP|=1<<LCD_E;		
-	_delay_us(1);
-	LCP&=~(1<<LCD_E);
-	_delay_us(50);	
-	LCD_DATAWR((cmd&0b00001111)<<4);	
-	LCP|=1<<LCD_E;		
-	_delay_us(1);
-	LCP&=~(1<<LCD_E);
 	_delay_us(50);
+	LCP&=~(1<<LCD_E);
+	_delay_ms(1);	
+	
+	// Mitad BAJA
+	LCD_DATAWR((cmd & 0b00001111)<<4);	
+	LCP|=1<<LCD_E;		
+	_delay_us(50);
+	LCP&=~(1<<LCD_E);
+	
+	if(cmd == 0x01 || cmd == 0x02) {
+        _delay_ms(5); // Retardo GIGANTE para Limpiar/Home
+    } else {
+        _delay_ms(2); // Retardo estándar grande para Proteus
+    }
 #else
 	//8 bit part
 	LDP=cmd;
+	LCP &= ~(1<<LCD_RS);
 	LCP|=1<<LCD_E;		
-	_delay_us(1);
+	_delay_us(2);
 	LCP&=~(1<<LCD_E);
-	_delay_us(50);	
+	
+	if(cmd == 0x01 || cmd == 0x02) {
+        _delay_ms(2); 
+    } else {
+        _delay_us(100);
+    }
 #endif
 }
 
@@ -89,45 +106,48 @@ void LCDsendCommand(uint8_t cmd)
 void LCDinit(void)
 {
 #ifdef LCD_4bit	
-	//4 bit part
-	_delay_ms(40);
-	LCD_DATAWR(0x00);	
-	LCP &= ~((1<<LCD_E) | (1<<LCD_RS));
+    // 1. Espera a que el voltaje sea estable al enchufar
+	_delay_ms(50);
+	
+	// FORZAMOS RS a 0 desde el principio (VITAL)
+    LCP &= ~(1<<LCD_RS);
+	
 	LDDR1|=1<<LCD_D7|1<<LCD_D6;
 	LDDR2|=1<<LCD_D4|1<<LCD_D5;
 	LCDR |= (1<<LCD_E) | (1<<LCD_RS);
-   //---------one------
-	LCD_DATAWR(0b00110000);	
-	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_us(1);
-	LCP&=~(1<<LCD_E);
-	_delay_ms(5); // Retardo mayor a 4.1ms segun datasheet
-	//-----------two-----------
 	
-	LCD_DATAWR(0b00110000);	
-	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_us(1);
-	LCP&=~(1<<LCD_E);
-	_delay_us(150); // Retardo mayor a 100 us
-	//-------three-------------
-
-	LCD_DATAWR(0b00110000);	
-	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_us(1);
-	LCP&=~(1<<LCD_E);
+    // 2. Secuencia de despertar (Pulsos únicos)
+	LCD_DATAWR(0b00110000);	 // 0x30
+	LCP|=1<<LCD_E;		
 	_delay_us(50);
+	LCP&=~(1<<LCD_E);
+	_delay_ms(5);
 	
-	//-------four (set 4-bit)-------------
-
-	LCD_DATAWR(0b00100000);	
-	LCP|=1<<LCD_E|0<<LCD_RW|0<<LCD_RS;		
-	_delay_us(1);
-	LCP&=~(1<<LCD_E);
+	LCD_DATAWR(0b00110000);	 // 0x30
+	LCP|=1<<LCD_E;		
 	_delay_us(50);
-	//--------4 bit--dual line---------------
-	LCDsendCommand(0b00101000);
-   //-----increment address, invisible cursor shift------
-	LCDsendCommand(0b00001100);
+	LCP&=~(1<<LCD_E);
+	_delay_ms(5);
+
+	LCD_DATAWR(0b00110000);	 // 0x30
+	LCP|=1<<LCD_E;		
+	_delay_us(50);
+	LCP&=~(1<<LCD_E);
+	_delay_ms(5);
+	
+	LCD_DATAWR(0b00100000);	 // 0x20 Pasamos a modo 4 bits
+	LCP|=1<<LCD_E;		
+	_delay_us(50);
+	LCP&=~(1<<LCD_E);
+	_delay_ms(5);
+	
+	// 3. A partir de acá, usamos la función formal que manda los 2 nibbles
+	LCDsendCommand(0x28); // Función: 4 bits, 2 lineas, 5x8 puntos
+	LCDsendCommand(0x08); // Apagar display por seguridad
+	LCDsendCommand(0x01); // Limpiar toda la pantalla
+	LCDsendCommand(0x06); // Modo de entrada (incrementar cursor a la derecha)
+	LCDsendCommand(0x0C); // Encender display, apagar cursor
+	
 	//init 8 custom chars in CGRAM
 	uint8_t ch=0, chn=0;
 	while(ch<64)
@@ -195,19 +215,19 @@ void LCDinit(void)
 // ==============================================================================
 
 /**
- * @brief Limpia toda la pantalla (Toma ~1.52 ms).
+ * @brief Limpia toda la pantalla.
  */
 void LCDclr(void)				
 {
 	LCDsendCommand(1<<LCD_CLR);
-	_delay_ms(2); // El comando toma ~1.52ms
+	_delay_ms(5); 
 }
 
 //LCD cursor home
 void LCDhome(void)			
 {
 	LCDsendCommand(1<<LCD_HOME);
-	_delay_ms(2); // El comando toma ~1.52ms
+	_delay_ms(5); 
 }
 
 //Outputs string to LCD

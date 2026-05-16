@@ -5,8 +5,13 @@
 #include "lcd.h"
 #include "keypad.h"
 #include "actuadores.h"
+#include <avr/wdt.h> // Incluimos la libreria del Watchdog
 
 int main(void) {
+    // 0. MATAMOS AL PERRO GUARDIAN INMEDIATAMENTE AL ARRANCAR
+    MCUSR = 0;      // Limpiamos banderas de reset previo
+    wdt_disable();  // Desactivamos el WDT para que no reinicie el chip
+    
     _delay_ms(100); // 1. Retardo para que estabilicen las señales de Proteus/Placa al encender
     KEYPAD_Init();
     ACTUADORES_Init();
