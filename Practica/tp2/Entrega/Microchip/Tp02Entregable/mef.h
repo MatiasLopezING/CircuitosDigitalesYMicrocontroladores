@@ -7,6 +7,7 @@ typedef enum {EV_START,EV_STOPCLEAR,EV_ADD30,EV_DOOROPEN,EV_DOORCLOSED,EV_TIMEOU
 
 void FSM_Init ();
 void FSM_Update();
+void FSM_UpdateOutputs();
 
 
 
