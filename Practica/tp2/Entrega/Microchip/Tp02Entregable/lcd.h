@@ -121,20 +121,9 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length);
 void LCD_Init(void);
 
 /**
- * @brief Resetea la cuenta en el display a "00:00".
+ * @brief Imprime un tiempo dado en segundos en formato "MM:SS" en la primera línea.
  */
-void LCD_Resetear(void);
-
-/**
- * @brief Actualiza la pantalla mostrando los segundos en formato "MM:SS".
- * @param seg Tiempo total en segundos a mostrar.
- */
-void LCD_Actualizar(uint16_t seg);
-
-/**
- * @brief Imprime un tiempo dado en formato "MM:SS" en la primera línea.
- */
-void LCD_ImprimirTiempo(uint8_t minutos, uint8_t segundos);
+void LCD_PrintTime(uint16_t seg);
 
 /**
  * @brief Enciende o apaga el display completamente sin perder los datos en memoria.

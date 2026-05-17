@@ -18,6 +18,10 @@
  */
 void TIMER_Init(void);
 
-extern volatile uint8_t flag_actualizar_lcd;
+extern volatile uint8_t flag_tick_10ms;
+
+extern volatile uint16_t segundos_transcurridos ;
+
+
 
 #endif /* TIMER_H_ */

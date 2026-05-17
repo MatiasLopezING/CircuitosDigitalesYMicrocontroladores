@@ -1,5 +1,5 @@
 #undef F_CPU
-#define F_CPU 8000000UL
+#define F_CPU 16000000UL
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -11,13 +11,15 @@
 #include "actuadores.h"
 #include "timer.h"
 
+
+
 int main(void) {
     // Desactivación del Watchdog Timer.
     MCUSR = 0;
     wdt_disable();
     
     // Retardo inicial de estabilización.
-    _delay_ms(100);
+    //_delay_ms(100);
 
     // Inicialización de periféricos.
     ACTUADORES_Init();
@@ -25,11 +27,8 @@ int main(void) {
     TIMER_Init();
     LCD_Init();
     
-    // Habilitación de interrupciones globales.
-    sei();
-    
     // Interfaz inicial.
-    LCD_Resetear(); // Imprime estado inicial en pantalla.
+    LCD_PrintTime(0); // Imprime estado inicial en pantalla.
     
     uint8_t tecla;
 
@@ -37,10 +36,16 @@ int main(void) {
     while(1) {
         
         // Escaneo de teclado matricial.
-        if (KEYPAD_Scan(&tecla)) {
-            
+        if (flag_tick_10ms) {
+			
+			flag_tick_10ms=0;
+			
+			ACTUADORES_AlarmaUpdate();
+			
+           if( KEYPAD_Scan(&tecla)) {
+			
             // Actualización de pantalla.
-            LCDclr();
+ 
             LCDGotoXY(0, 0);
             LCDstring((uint8_t*)"Tecla: ", 7);
             LCDsendChar(tecla);
@@ -48,31 +53,28 @@ int main(void) {
             // Control de actuadores.
             switch(tecla) {
                 case 'A': // Inicia operación.
-                    MAGNETRON_On();
-                    LUZ_On();
+                    ACTUADORES_MagnetronOn();
+                    ACTUADORES_LuzOn();
                     break;
                 case 'B': // Detiene operación y resetea.
-                    MAGNETRON_Off();
-                    LUZ_Off();
-                    ALARMA_Off();
-                    LCD_Resetear();
+                    ACTUADORES_MagnetronOff();
+                    ACTUADORES_LuzOff();
+                    ACTUADORES_AlarmaOff();
+                    LCD_PrintTime(0);
                     break;
                 case 'C': // Alterna estado de alarma.
-                    ALARMA_Toggle();
+                    ACTUADORES_AlarmaToggle();
                     break;
                 case 'D': // Apaga magnetrón.
-                    MAGNETRON_Off();
+                   ACTUADORES_MagnetronOff();
                     break;
             }
+		   }
         }
         
-        // Actualización periódica gobernada por Timer0.
-        if (flag_actualizar_lcd == 1) {
-            flag_actualizar_lcd = 0;
-            // Actualización de cronómetro.
-        }
+
         
-        _delay_ms(10); // Retardo de estabilización.
+  
     }
 
     return 0;

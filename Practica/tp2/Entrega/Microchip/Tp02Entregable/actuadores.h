@@ -24,12 +24,12 @@ void ACTUADORES_Init(void);
 /**
  * @brief Enciende el Magnetrón.
  */
-void MAGNETRON_On(void);
+void ACTUADORES_MagnetronOn(void);
 
 /**
  * @brief Apaga el Magnetrón.
  */
-void MAGNETRON_Off(void);
+void ACTUADORES_MagnetronOff(void);
 
 // ==============================================================================
 // --- Luz Interior (LED Amarillo en PC4) ---
@@ -38,12 +38,12 @@ void MAGNETRON_Off(void);
 /**
  * @brief Enciende la luz interior del microondas.
  */
-void LUZ_On(void);
+void ACTUADORES_LuzOn(void);
 
 /**
  * @brief Apaga la luz interior del microondas.
  */
-void LUZ_Off(void);
+void ACTUADORES_LuzOff(void);
 
 // ==============================================================================
 // --- Alarma (LED Verde en PC5) ---
@@ -52,16 +52,23 @@ void LUZ_Off(void);
 /**
  * @brief Enciende la alarma sonora.
  */
-void ALARMA_On(void);
+void ACTUADORES_AlarmaOn(void);
 
 /**
  * @brief Apaga la alarma sonora.
  */
-void ALARMA_Off(void);
+void ACTUADORES_AlarmaOff(void);
 
 /**
  * @brief Invierte (toggle) el estado actual de la alarma.
  */
-void ALARMA_Toggle(void);
+void ACTUADORES_AlarmaToggle(void);
 
+
+/**
+ * @brief Permite cada 500 ms invertir el valor de la alarma para hacerla parpadear
+ */
+void ACTUADORES_AlarmaUpdate(void);
 #endif /* ACTUADORES_H_ */
+
+

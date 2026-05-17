@@ -1,5 +1,5 @@
 #ifndef F_CPU
-#define F_CPU 8000000UL
+#define F_CPU 16000000UL
 #endif
 
 #include "keypad.h"
@@ -80,7 +80,7 @@ static uint8_t readCol(uint8_t col) {
 static uint8_t KeypadUpdate(void) {
     for (uint8_t row = 0; row < 4; row++) {
         setRowLow(row); // Activa fila.
-        _delay_us(10);  // Retardo de estabilización eléctrica.
+        _delay_us(10);  // Retardo de estabilización eléctrica. ->Muy chico en comparacion con el tick, por lo tanto no es bloqueante
         
         for (uint8_t col = 0; col < 4; col++) {
             if (readCol(col)) { // Detección de contacto.
@@ -123,10 +123,10 @@ uint8_t KEYPAD_Scan(uint8_t *pkey) {
     return 0;
 }
 
-uint8_t KEYPAD_GetKey(void) {
-    uint8_t key;
-    if (KEYPAD_Scan(&key)) {
-        return key; 
-    }
-    return 0; 
-}
+//uint8_t KEYPAD_GetKey(void) {
+   // uint8_t key;
+  //  if (KEYPAD_Scan(&key)) {
+  //      return key; 
+  //  }
+  //  return 0; 
+//}
