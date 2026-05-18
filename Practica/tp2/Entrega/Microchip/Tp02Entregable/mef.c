@@ -263,6 +263,7 @@ void FSM_Update(void)
 					 }
 					else if (key == 'B') {  // cancelar y volver a REPOSO
 						Resetear_Digitos();
+						LCD_PrintDigits(M1,M0,S1,S0);
 						SegundosRestantes = 0;
 						EstadoActual = REPOSO;
 				 }
@@ -305,7 +306,7 @@ void FSM_Update(void)
 				 LCD_SetearEstado(1);  // Asegurar display encendido al salir
 				 ACTUADORES_AlarmaOff(); //Asegurar alarma apagada al salir
 				 Resetear_Digitos();
-				 
+				 LCD_PrintDigits(M1,M0,S1,S0);
 				 EstadoActual = REPOSO;
 			 }
 		 }
