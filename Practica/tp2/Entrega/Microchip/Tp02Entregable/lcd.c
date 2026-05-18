@@ -436,9 +436,7 @@ void LCD_Update(){
 // ==============================================================================
 
 
-/**
- * @brief Secuencia principal de inicializacion del LCD.
- */
+
 void LCD_Init() {
 	LCDinit();
 	LCDclr();
@@ -448,13 +446,6 @@ void LCD_Init() {
 
 
 
-
-
-
-/**
- * @brief Convierte un tiempo total en segundos al formato "MM:SS" y lo imprime.
- * @param seg Tiempo total en segundos.
- */
 void LCD_PrintTime(uint16_t seg) {
     uint8_t minutos = seg / 60;
     uint8_t segundos = seg % 60;
@@ -484,10 +475,6 @@ void LCD_PrintDigits(uint8_t M1,uint8_t M0,uint8_t S1,uint8_t S0) {
 	LCDstring((uint8_t*)buffer, 5);
 }
 
-/**
- * @brief Enciende o apaga el display completamente.
- * @param estado 0 = apaga el display, 1 = lo enciende.
- */
 void LCD_SetearEstado(uint8_t estado) {
     if (estado == 0) {
         LCDblank();     

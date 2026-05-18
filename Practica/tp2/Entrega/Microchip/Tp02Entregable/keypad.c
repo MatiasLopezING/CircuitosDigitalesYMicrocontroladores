@@ -123,10 +123,4 @@ uint8_t KEYPAD_Scan(uint8_t *pkey) {
     return 0;
 }
 
-//uint8_t KEYPAD_GetKey(void) {
-   // uint8_t key;
-  //  if (KEYPAD_Scan(&key)) {
-  //      return key; 
-  //  }
-  //  return 0; 
-//}
+

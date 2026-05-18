@@ -1,5 +1,5 @@
 /**
- * @file lcd.h
+ * 
  * @brief Librería para control de display LCD HD44780.
  * 
  * Configurado para interfaz de 4 bits. Contiene definiciones de pines,
@@ -10,7 +10,7 @@
 #define LCD_H
 
 #ifndef F_CPU
-#define F_CPU 8000000UL // Frecuencia de reloj: 8 MHz
+#define F_CPU 16000000UL // Frecuencia de reloj: 16 MHz
 #endif
 
 #include <avr/io.h>
@@ -122,8 +122,14 @@ void LCD_Init(void);
 
 /**
  * @brief Imprime un tiempo dado en segundos en formato "MM:SS" en la primera línea.
+   @param seg donde recibo una cantidad dada de segundos
  */
 void LCD_PrintTime(uint16_t seg);
+
+/**
+ * @brief Imprime los digitos recibidos por parametro en formato "M1M0:S1S0" en la primera línea.
+   @param M1 decena de minutos, M0 unidad de minutos, S1 decena de segundos, S0 unidad de segundos
+ */
 
 void LCD_PrintDigits(uint8_t M1,uint8_t M0,uint8_t S1,uint8_t S0);
 

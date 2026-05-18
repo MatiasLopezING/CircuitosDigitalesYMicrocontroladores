@@ -14,11 +14,7 @@
 extern volatile uint8_t flag_tick_10ms;
 extern volatile uint16_t flag_tick_1s ;
 
-/**
- * @brief Inicializa el Timer0 en Modo CTC.
- * Genera una interrupción exacta cada 1 milisegundo (asumiendo F_CPU = 8 MHz).
- * Requiere habilitar las interrupciones globales (`sei()`).
- */
+
 void TIMER_Init(void);
 
 void TIMER_ResetTimerSeg();

@@ -217,7 +217,7 @@ void FSM_Update(void)
 
 			}
 			else
-				if (key == 'D' || key == 'B') { // Se abrio la puerta o se presiono tecla B STOP/CLEAR
+				if ( key == 'B') { // Se presiono tecla B STOP/CLEAR
 					EstadoActual=PAUSA;
 					primerCocinando=true; //Vuelvo a poner en true para cuando se vuelva a este estado
 				}

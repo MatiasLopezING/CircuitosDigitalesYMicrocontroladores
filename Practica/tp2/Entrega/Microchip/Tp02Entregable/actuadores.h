@@ -1,7 +1,6 @@
 /**
- * @file actuadores.h
- * @brief Librería de control de actuadores de hardware.
  * 
+ * @brief Librería de control de actuadores de hardware.
  * Contiene las funciones para inicializar y controlar los actuadores del sistema
  * (Magnetrón, Luz interior y Alarma sonora).
  */
@@ -12,8 +11,7 @@
 #include <avr/io.h>
 
 /**
- * @brief Inicializa los pines correspondientes a los actuadores.
- * Configura los pines de salida del microcontrolador y los establece en estado bajo (apagados).
+ * @brief Configura los pines correspondientes a los actuadores y los inicializa en estado bajo (apagados).
  */
 void ACTUADORES_Init(void);
 
@@ -65,10 +63,6 @@ void ACTUADORES_AlarmaOff(void);
 void ACTUADORES_AlarmaToggle(void);
 
 
-/**
- * @brief Luego de ser llamada 50 veces a esta funcion y si la Alarma esta activa, invierte el estado de la alarma
- */
-void ACTUADORES_AlarmaParpadeo(void);
 #endif /* ACTUADORES_H_ */
 
 

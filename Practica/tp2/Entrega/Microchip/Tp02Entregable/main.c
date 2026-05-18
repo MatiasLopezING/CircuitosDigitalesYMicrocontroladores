@@ -15,11 +15,7 @@
 
 
 int main(void) {
-    // Desactivación del Watchdog Timer.
-    MCUSR = 0;
-    wdt_disable();
-    
-
+ 
     // Inicialización 
     ACTUADORES_Init();
     KEYPAD_Init();
@@ -27,10 +23,9 @@ int main(void) {
     LCD_Init();
 	FSM_Init();
 
-
   
     while(1) {
-        
+
   
         if (flag_tick_10ms) {
 			
@@ -38,9 +33,7 @@ int main(void) {
 			
            FSM_Update();
         }
-        
 
-        
   
     }
 
