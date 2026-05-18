@@ -1,37 +1,66 @@
 #include "mef.h"
 #include "keypad.h"
 #include "actuadores.h"
+#include "lcd.h"
+#include "timer.h"
 #include <stdbool.h>
-#define TICKSERROR 10
-#define ERRORDIGITOS "ERROR DIGITOS"
-#define ERRORTIEMPOINVALIDO "ERROR TIEMPO INVALIDO"
-#define ERRORTIEMPOCERO "ERROR TIEMPO CERO"
 
-#if 0 // Bloque comentado temporalmente por errores de sintaxis a resolver
+#define TICKSERROR 200 //Defino la cantidad de ticks por los que mostrare un error en el LCD. Como FSM_Update() se hace cada 10 ms, mostrare el mensaje de error por 200*10ms= 2seg
+#define TICKSDISPLAY 50 // Defino la cantidad de ticks por los que el display estara prendido/apagado al estar parpadeando. Como FSM_Update() se hace cada 10 ms, el display se apagara y prendera cada 50*10ms= 0,5 seg
+#define TICKSALARMA 50  // Defino la cantidad de ticks por los que la alarma estara prendido/apagado al estar conmutando entre estos estados. Como FSM_Update() se hace cada 10 ms, la alarma se apagara y prendera cada 50*10ms= 0,5 seg
+
+typedef enum {
+	ERRORTIEMPOCERO,
+	ERRORTIEMPOINVALIDO
+	
+} Error_t;
+
+//-------------------------Variables privadas de la MEF--------------------------------------//
 
 static state EstadoActual; //Guardare el estado actual de la MEF
-static uint16_t Ticks1s = 0; //Ticks para saber si paso 1 seg (Dependera de la frec del clock del timer), por ahi tambien puedo hacer que me devuelvan un true cuando paso 1 seg
-static uint16_t SegundosRestantes=0;
-static bool 1erTermino=true;
-static uint8_t key;
-static uint8_t M1 = 0,M0 = 0,S1 = 0,S0 = 0; //Variables para los digitos a mostrar en el LCD
-static uint8_t cantDigitos=0;
+
+static uint16_t SegundosRestantes=0; //Variable de los segundos restantes de coccion
+
+static bool hayError=false; //Variable para detectar errores
+static uint16_t ticksMostrarError; //Cuenta de ticks para los errores
+
+static bool primerTermino=true,primerCocinando=true; //Variables para saber si se acaba de transicionar al estado TERMINO o COCINANDO. Con estas sera posible asegurarnos que el primer segundo que pase dure exactamente 1 seg y no tenga una duracion menor
 
 
-static Shift_Digitos (uint8_t digito) {
+static uint8_t hayTecla; //Variable para saber si se detecto tecla del KEYPAD
+static uint8_t key; //Variable para guardar la tecla leida del KEYPAD
+
+static uint8_t ticksParpadeoDisplay=0,segTermino=0,estadoDisplay=1; //Variables para lograr el parpadeo del display en estado TERMINO
+
+static uint8_t ticksParpadeoAlarma=0; //Variable para contar ticks para el parpadeo de la alarma en TERMINO
+
+static uint8_t M1 = 0,M0 = 0,S1 = 0,S0 = 0; //Variables para los digitos a mostrar en el LCD (M1M0:S1S0)
+
+static bool puertaAbierta = false; //Variable para saber el estado de la puerta
+
+//-------------------------Funciones privadas de la MEF--------------------------------------//
+
+static void Shift_Digitos (uint8_t digito) { //Desplazamiento al ingresar un nuevo digito
 	M1=M0;
 	M0=S1;
 	S1=S0;
 	S0=digito;
 }
 
-static uint16_t Calculo_Segundos(void) {
+static void Resetear_Digitos () { //Reseteo de los digitos a 00:00
+	M1=0;
+	M0=0;
+	S1=0;
+	S0=0;
+}
+
+static uint16_t Calculo_Segundos(void) { //Calculo de los segundos en base al tiempo seleccionado por el usuario (M1M0:S1S0)
 	
 	return (M1*10 + M0)*60 + (S1*10 + S0);
 	
 }
 
-static bool TiempoValido(void)
+static bool Tiempo_Valido(void) //Funcion para saber si el tiempo es valido. Ej de tiempo invalido seria 66:66 ya que tanto los minutos como los segundos exceden el valor de 59 -> Decision de modelado del problema no se aceptaran mas de 59 segundos ni mas de 59 minutos.
 {
 	uint8_t minutos = M1 * 10 + M0;
 	uint8_t segundos = S1 * 10 + S0;
@@ -41,163 +70,211 @@ static bool TiempoValido(void)
 		return false;
 	}
 
-
+   
 	return true;
 }
 
-static void Mostrar_Error(string mensaje) {
+static void Mostrar_Error( Error_t error) { //Permite mostrar los tipos de errores definidos en el LCD
 	
-		mostrarError=true; //Aviso de que hay que mostrar el mensaje de error en el display LCD
-		tickMostrarError=TICKSERROR; //Seteo la cantidad de ticks que mantendre el mensaje de error en el LCD (Se puede cambiar en el define)
-		LCD_PrintMessage(mensaje); //Aviso de error en el display
+		LCDclr();
 	
+		hayError=true; //Aviso de que hay que mostrar el mensaje de error en el display LCD
+		ticksMostrarError=TICKSERROR; //Seteo la cantidad de ticks que mantendre el mensaje de error en el LCD (Se puede cambiar en el define)
+		LCDGotoXY(0,0); //Posicionamiento
+		switch(error) {
+			 case ERRORTIEMPOCERO:
+			 LCDstring((uint8_t*)"COLOQUE TIEMPO", 14);
+			 LCDGotoXY(0,1);
+			 LCDstring((uint8_t*)"MAYOR A CERO", 12);
+			 break;
+			 case ERRORTIEMPOINVALIDO:
+			 LCDstring((uint8_t*)"COLOQUE TIEMPO", 14);
+			 LCDGotoXY(0,1);
+			 LCDstring((uint8_t*)"VALIDO", 6);
+			 break;
+		}
+	
+
 }
+
+//-------------------------Funciones publicas de la MEF--------------------------------------//
 
 void FSM_Init(void) { 
 	EstadoActual=REPOSO;
-	LCD_Resetear(); //Resetea el contador a 00:00, Esto podria hacerse por ahi desde el main directamente
+	LCD_PrintTime(0); 
 	
 }
 
 void FSM_Update(void)
 {
-	key = KEYPAD_GetKey();
+	hayTecla=KEYPAD_Scan(&key);
 
-	switch(EstadoActual)
-	{
+	switch(EstadoActual) {
+	
 		case REPOSO:
 		
-		if(mostrarError) {
-		     if(tickMostrarError)
-			     tickMostrarError--;
+		
+		//Logica para muestra de errores una cantidad dada de tiempo
+		if(hayError) {
+		     if(ticksMostrarError > 0)
+			     ticksMostrarError--;
 		     else
 		     {
-			     mostrarError = false;
-			     LCD_PrintTime(SegundosRestantes);
+			     hayError = false;
+				 LCDclr();
+			     LCD_PrintDigits(M1,M0,S1,S0); //Pasado el tiempo de muestra de error vuelvo a mostrar los digitos
 		     }
-
-		    
-		     break;  //Ignorar input mientras hay error -> Decision de modelado del problema
 	     }
 
-	    
+	    else {  //Ignorar input mientras hay error -> Decision de modelado del problema
 
-		if (key) { //Se presiono tecla	
-			if ((key >= '0') AND (key <= '9'))  {
-				if( cantDigitos < 4) { //Si no complete los 4 digitos
-					cantDigitos++; //Sumo cantidad de digitos ingresados
-					Shift_Digitos(key-'0'); //Actualizo digitos luego del ingresado
-					SegundosRestantes=Calculo_Segundos(); //Actualizo tiempo
-				}
-				else { //Aviso de que para modificar el tiempo debe presionar tecla 'B' = STOP/CLEAR
-					Mostrar_Error(ERRORDIGITOS)
-				}
-			}
-		   else {
-				if(key == 'B') //Se presiono STOP/CLEAR
-					SegundosRestantes=0; //Resetea el contador a 00:00
-				else 
-					if(key == 'A') { //Se presiono START
-						if(TiempoValido()) {
-							if(SegundosRestantes)
-								EstadoActual=COCINANDO;
-								cantDigitos=0; //Reseteo para cuando vuelvan a REPOSO o si modifican en PAUSA
-							else  {
-								Mostrar_Error(ERRORTIEMPOCERO);
-							}
-						else {
-							Mostrar_Error(ERRORTIEMPOINVALIDO);
-						}
+			if (hayTecla) { //Se presiono tecla	
+				if ( (key >= '0') && (key <= '9') )  {
+						Shift_Digitos(key-'0'); //Actualizo digitos luego del ingresado
+					}
+				 else 
+					if(key == 'B') { //Se presiono STOP/CLEAR
+						Resetear_Digitos();
 					}
 					else 
-						if(key == 'C') { //Se presiono +30 seg
-							SegundosRestantes+=30;
-							EstadoActual=COCINANDO;
+						if(key == 'A') { //Se presiono START
+							if(Tiempo_Valido()) {
+								SegundosRestantes=Calculo_Segundos();
+								if(SegundosRestantes) {
+									EstadoActual=COCINANDO;
+								}
+								else  {
+									Mostrar_Error(ERRORTIEMPOCERO);
+								}
+							}
+							else {
+								Resetear_Digitos(); //Si puso tiempo invalido directamente reseteo -> Decision de modelado del problema
+								Mostrar_Error(ERRORTIEMPOINVALIDO);
+							}
 						}
-		if (!mostrarError) LCD_PrintTime(SegundosRestantes); //Actualizo el tiempo del display solo si se presiono una tecla nueva y no hay error
-		 }
-		   
+						else 
+							if(key == 'C') { //Al presionarse la tecla C de +30 seg se le da inicio rapido al microondas con un tiempo de 30 segundos -> Decision de modelado del problema
+								SegundosRestantes=30;
+								Resetear_Digitos();
+								S1=3;
+								primerCocinando=true;
+								EstadoActual=COCINANDO;
+							}
+			
+			if (!hayError) LCD_PrintDigits(M1,M0,S1,S0); //Actualizo el tiempo del display solo si se presiono una tecla nueva y no se genero error en el medio			
+			
+			}
+			
 		}
+		
 		break;
 		
 		case COCINANDO:
 		
-		if (key) {
+		if(primerCocinando) { //Nos aseguramos de que el 1er seg del tiempo de coccion dure 1 seg entero, ya que podria pasar que el flag de 1seg se active muy rapido
+			primerCocinando=false;
+			TIMER_ResetTimerSeg(); //Para que el 1er seg no sea corto 
+			LCD_PrintTime(SegundosRestantes); //Para imprimir el primer valor de la cuenta
+		}
+		
+		if (hayTecla) {
 			if (key == 'C') { // Se presiono +30 seg
 				SegundosRestantes+=30;
 				LCD_PrintTime(SegundosRestantes);
 
 			}
 			else
-				if (key == 'D') { // Se abrio la puerta
-				EstadoActual=PUERTA_ABIERTA;
+				if (key == 'D' || key == 'B') { // Se abrio la puerta o se presiono tecla B STOP/CLEAR
+					EstadoActual=PAUSA;
+					primerCocinando=true; //Vuelvo a poner en true para cuando se vuelva a este estado
 				}
-				else
-					if (key == 'B') //Se presiono STOP/CLEAR
-					{
-						EstadoActual=PAUSA;
-					}
+
 	
 
 		}
 		
 		
-		if (++Ticks1Seg == TICKS1SEG) { //Paso 1 seg
-			Ticks1Seg=0;
+		if (flag_tick_1s) { //Paso 1 seg
+			flag_tick_1s=0;
 			SegundosRestantes--;
-			if (SegundosRestantes == 0) //Se termino el tiempo de coccion
+			if (SegundosRestantes == 0) { //Se termino el tiempo de coccion
 				EstadoActual=TERMINO;
+				primerCocinando=true;//Vuelvo a poner en true para cuando se vuelva a este estado
+				}
 			LCD_PrintTime(SegundosRestantes); //Solo actualizo cuando pasa 1 seg
 		}
 		
 		
 		
-		case PUERTA_ABIERTA:
-		
-		if (key == 'D') { //Se cerro la puerta
-			EstadoActual=COCINANDO;
-			
-		}
+		break;
 		
 		case PAUSA:
 		
-		if (key) {
-			if (key == 'B') //Se presiono STOP/CLEAR
-			{
-				EstadoActual=REPOSO;
-				SegundosRestantes=0;
-			}
-			else
-				if ((key >= '0') AND (key <= '9'))  {
-					if( cantDigitos < 4) { //Si no complete los 4 digitos
-						cantDigitos++; //Sumo cantidad de digitos ingresados
-						Shift_Digitos(key-'0'); //Actualizo digitos luego del ingresado
-						SegundosRestantes=Calculo_Segundos(); //Actualizo tiempo
-					}
-					else { //Aviso de que para modificar el tiempo debe presionar tecla 'B' = STOP/CLEAR
-						Mostrar_Error(ERRORDIGITOS);
-					}
+		if (hayTecla) {
+			 if (key == 'C') {
+				 SegundosRestantes += 30;
+				 LCD_PrintTime(SegundosRestantes);
+			 }
+			 else if (key == 'A') {  // reanudar con el tiempo que quedaba
+				 primerCocinando=true;
+				 EstadoActual = COCINANDO;
+			 }
+			 else if (key == 'B') {  // cancelar y volver a REPOSO
+				 Resetear_Digitos();
+				 SegundosRestantes = 0;
+				 EstadoActual = REPOSO;
+			 }
+		
 		}
+		break;
+		
 		case TERMINO:
 		
-		if (1erTermino) {
-			1erTermino=false;
-			IniciarTimer5Seg();
+		if (primerTermino) {
+			primerTermino=false;
+			TIMER_ResetTimerSeg();
+			ACTUADORES_AlarmaOn();
 		}
 		
-		LCD_Parpadear(); //Habria que ver como hacemos esto
-		
-		if (TerminoTimer5Seg) {
-			EstadoActual=REPOSO;
-			1erTermino=true;
+
+		if (++ticksParpadeoAlarma >= TICKSALARMA) {
+			ticksParpadeoAlarma = 0;
+			ACTUADORES_AlarmaToggle();
 		}
+
 		
+		 // Parpadeo del display cada 500ms (mismo criterio que alarma)
+		 if (++ticksParpadeoDisplay >= TICKSDISPLAY) {
+			 ticksParpadeoDisplay = 0;
+			 estadoDisplay ^= 1;
+			 LCD_SetearEstado(estadoDisplay);
+		 }
+
+		 if (flag_tick_1s) {
+			 flag_tick_1s = 0;
+			 segTermino++;
+			 if (segTermino == 5) { //Pasaron los 5 seg de alarma, vuelvo a estado de REPOSO
+				 //Reseteo de variables y estados
+				 primerTermino = true;
+				 segTermino = 0; 
+				 ticksParpadeoDisplay = 0; 
+				 estadoDisplay = 1;
+				 LCD_SetearEstado(1);  // Asegurar display encendido al salir
+				 ACTUADORES_AlarmaOff(); //Asegurar alarma apagada al salir
+				 Resetear_Digitos();
+				 
+				 EstadoActual = REPOSO;
+			 }
+		 }
 		
+		break;
 		
+		}
+		FSM_UpdateOutputs(); //Segun el estado actualizo las salidas
 	}
 	
-	FSM_UpdateOutputs(); //Segun el estado actualizo las salidas
-}
+	
+
 
 
 void FSM_UpdateOutputs(void)
@@ -221,25 +298,10 @@ void FSM_UpdateOutputs(void)
 		ACTUADORES_LuzOff();
 		ACTUADORES_AlarmaOff();
 		break;
-		
-		case PUERTA_ABIERTA:
-		ACTUADORES_MagnetronOff();
-		ACTUADORES_LuzOn();
-		ACTUADORES_AlarmaOff();
-		break;
 
 		case TERMINO:
 		ACTUADORES_MagnetronOff();
 		ACTUADORES_LuzOff();
-		ACTUADORES_AlarmaOn();
 		break;
 	}
-}
-#endif // Fin bloque comentado
-
-// Implementaciones temporales (stubs) para permitir la compilación del módulo principal
-void FSM_Init(void) { 
-}
-
-void FSM_Update(void) {
 }

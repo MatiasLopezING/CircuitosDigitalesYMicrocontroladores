@@ -125,11 +125,13 @@ void LCD_Init(void);
  */
 void LCD_PrintTime(uint16_t seg);
 
+void LCD_PrintDigits(uint8_t M1,uint8_t M0,uint8_t S1,uint8_t S0);
+
 /**
  * @brief Enciende o apaga el display completamente sin perder los datos en memoria.
  * @param estado 0 = apagar, 1 = encender.
  */
-void LCD_Parpadear(uint8_t estado);
+void LCD_SetearEstado(uint8_t estado);
 
 #endif /* LCD_H */
 

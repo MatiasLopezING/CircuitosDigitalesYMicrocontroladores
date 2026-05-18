@@ -66,9 +66,9 @@ void ACTUADORES_AlarmaToggle(void);
 
 
 /**
- * @brief Permite cada 500 ms invertir el valor de la alarma para hacerla parpadear
+ * @brief Luego de ser llamada 50 veces a esta funcion y si la Alarma esta activa, invierte el estado de la alarma
  */
-void ACTUADORES_AlarmaUpdate(void);
+void ACTUADORES_AlarmaParpadeo(void);
 #endif /* ACTUADORES_H_ */
 
 

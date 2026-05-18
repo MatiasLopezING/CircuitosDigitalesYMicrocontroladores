@@ -6,9 +6,9 @@
 // ==============================================================================
 volatile uint8_t flag_tick_10ms = 0;
 
-volatile uint16_t segundos_transcurridos = 0;
+volatile uint16_t flag_tick_1s = 0;
 
-static uint16_t contador_1ms = 0;
+static uint16_t contador_1ms = 0,contador_1s=0;
 
 // ==============================================================================
 // Inicialización del Timer
@@ -33,6 +33,10 @@ void TIMER_Init(void) {
 	sei();
 }
 
+void TIMER_ResetTimerSeg() {
+	contador_1s=0;
+	flag_tick_1s=0;
+}
 // ==============================================================================
 // Rutina de Servicio de Interrupción (ISR)
 // ==============================================================================
@@ -48,10 +52,10 @@ ISR(TIMER0_COMPA_vect) {
 	
 	ticks_10ms++;
 	
-	contador_1ms++;
+	contador_1ms++; contador_1s++;
 	
 	 // Tick principal de scheduler cada 10 ms
-	 if(ticks_10ms >= 10)
+	 if(ticks_10ms == 10)
 	 {
 		 ticks_10ms = 0;
 
@@ -59,11 +63,11 @@ ISR(TIMER0_COMPA_vect) {
 	 }
     
 	 // 1 segundo para reloj del microondas
-	 if(contador_1ms >= 1000)
+	 if(contador_1s == 1000)
 	 {
-		 contador_1ms = 0;
+		 contador_1s = 0;
 
-		 segundos_transcurridos++;
+		 flag_tick_1s=1;
 	 }
 	 
   }

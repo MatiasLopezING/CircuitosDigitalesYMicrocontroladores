@@ -472,14 +472,26 @@ void LCD_PrintTime(uint16_t seg) {
     LCDstring((uint8_t*)buffer, 5);
 }
 
+void LCD_PrintDigits(uint8_t M1,uint8_t M0,uint8_t S1,uint8_t S0) {
+	char buffer[6];
+	buffer[0] = M1 + '0';
+	buffer[1] = M0 + '0';
+	buffer[2] = ':';
+	buffer[3] = S1 + '0';
+	buffer[4] = S0 + '0';
+	buffer[5] = '\0';
+	LCDGotoXY(0, 0);
+	LCDstring((uint8_t*)buffer, 5);
+}
+
 /**
  * @brief Enciende o apaga el display completamente.
  * @param estado 0 = apaga el display, 1 = lo enciende.
  */
-void LCD_Parpadear(uint8_t estado) {
+void LCD_SetearEstado(uint8_t estado) {
     if (estado == 0) {
-        LCDblank();     // Comando 0x08
+        LCDblank();     
     } else {
-        LCDvisible();   // Comando 0x0C
+        LCDvisible();   
     }
 }

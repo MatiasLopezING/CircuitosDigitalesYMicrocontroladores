@@ -11,6 +11,9 @@
 
 #include <avr/io.h>
 
+extern volatile uint8_t flag_tick_10ms;
+extern volatile uint16_t flag_tick_1s ;
+
 /**
  * @brief Inicializa el Timer0 en Modo CTC.
  * Genera una interrupción exacta cada 1 milisegundo (asumiendo F_CPU = 8 MHz).
@@ -18,10 +21,6 @@
  */
 void TIMER_Init(void);
 
-extern volatile uint8_t flag_tick_10ms;
-
-extern volatile uint16_t segundos_transcurridos ;
-
-
+void TIMER_ResetTimerSeg();
 
 #endif /* TIMER_H_ */
