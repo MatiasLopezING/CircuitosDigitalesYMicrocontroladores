@@ -11,7 +11,8 @@
 
 typedef enum {
 	ERRORTIEMPOCERO,
-	ERRORTIEMPOINVALIDO
+	ERRORTIEMPOINVALIDO,
+	ERRORPUERTAABIERTA
 	
 } Error_t;
 
@@ -26,6 +27,7 @@ static uint16_t ticksMostrarError; //Cuenta de ticks para los errores
 
 static bool primerTermino=true,primerCocinando=true; //Variables para saber si se acaba de transicionar al estado TERMINO o COCINANDO. Con estas sera posible asegurarnos que el primer segundo que pase dure exactamente 1 seg y no tenga una duracion menor
 
+static bool errorEnPausa; //Variable para saber cuando tenia la puerta abierta en el estado de pausa y poder mostrar el tiempo correspondiente en el display
 
 static uint8_t hayTecla; //Variable para saber si se detecto tecla del KEYPAD
 static uint8_t key; //Variable para guardar la tecla leida del KEYPAD
@@ -77,7 +79,7 @@ static bool Tiempo_Valido(void) //Funcion para saber si el tiempo es valido. Ej 
 static void Mostrar_Error( Error_t error) { //Permite mostrar los tipos de errores definidos en el LCD
 	
 		LCDclr();
-	
+	    errorEnPausa = (EstadoActual == PAUSA);  //  Guardo contexto para saber que imprimir al terminar Procesar_error
 		hayError=true; //Aviso de que hay que mostrar el mensaje de error en el display LCD
 		ticksMostrarError=TICKSERROR; //Seteo la cantidad de ticks que mantendre el mensaje de error en el LCD (Se puede cambiar en el define)
 		LCDGotoXY(0,0); //Posicionamiento
@@ -92,9 +94,29 @@ static void Mostrar_Error( Error_t error) { //Permite mostrar los tipos de error
 			 LCDGotoXY(0,1);
 			 LCDstring((uint8_t*)"VALIDO", 6);
 			 break;
+			 case ERRORPUERTAABIERTA: 
+			 LCDstring((uint8_t*)"CIERRE LA PUERTA", 16);
+			 LCDGotoXY(0,1);
+			 LCDstring((uint8_t*)"PARA CONTINUAR", 14);
+			 break;
 		}
 	
 
+}
+
+static void Procesar_Error(){
+	 if(ticksMostrarError > 0)
+		ticksMostrarError--;
+	 else
+	 {
+		 hayError = false;
+		 LCDclr();
+		 if (errorEnPausa) // Si vengo de un error en pausa, es porque la puerta estaba abierta y quise reanudar la coccion, por lo que debo imprimir los segundos que se hayan establecido y no los digitos que habia ingresado inicialmente el usuario
+		   LCD_PrintTime(SegundosRestantes);
+		 else
+		   LCD_PrintDigits(M1,M0,S1,S0);
+		
+	 }
 }
 
 //-------------------------Funciones publicas de la MEF--------------------------------------//
@@ -109,6 +131,10 @@ void FSM_Update(void)
 {
 	hayTecla=KEYPAD_Scan(&key);
 
+	if (hayTecla && key == 'D') { //Me guardo el estado de la puerta para tomar decisiones en cada estado
+		puertaAbierta ^= 1;
+		hayTecla = 0;  // Consumir la tecla para que no la procese el switch
+	}
 	switch(EstadoActual) {
 	
 		case REPOSO:
@@ -116,14 +142,7 @@ void FSM_Update(void)
 		
 		//Logica para muestra de errores una cantidad dada de tiempo
 		if(hayError) {
-		     if(ticksMostrarError > 0)
-			     ticksMostrarError--;
-		     else
-		     {
-			     hayError = false;
-				 LCDclr();
-			     LCD_PrintDigits(M1,M0,S1,S0); //Pasado el tiempo de muestra de error vuelvo a mostrar los digitos
-		     }
+		    Procesar_Error();
 	     }
 
 	    else {  //Ignorar input mientras hay error -> Decision de modelado del problema
@@ -138,6 +157,10 @@ void FSM_Update(void)
 					}
 					else 
 						if(key == 'A') { //Se presiono START
+							if (puertaAbierta) {
+								Mostrar_Error(ERRORPUERTAABIERTA);
+							}
+							else
 							if(Tiempo_Valido()) {
 								SegundosRestantes=Calculo_Segundos();
 								if(SegundosRestantes) {
@@ -154,11 +177,16 @@ void FSM_Update(void)
 						}
 						else 
 							if(key == 'C') { //Al presionarse la tecla C de +30 seg se le da inicio rapido al microondas con un tiempo de 30 segundos -> Decision de modelado del problema
+								if (puertaAbierta) {
+									Mostrar_Error(ERRORPUERTAABIERTA);
+								}
+								else{
 								SegundosRestantes=30;
 								Resetear_Digitos();
 								S1=3;
 								primerCocinando=true;
 								EstadoActual=COCINANDO;
+								}
 							}
 			
 			if (!hayError) LCD_PrintDigits(M1,M0,S1,S0); //Actualizo el tiempo del display solo si se presiono una tecla nueva y no se genero error en el medio			
@@ -171,6 +199,11 @@ void FSM_Update(void)
 		
 		case COCINANDO:
 		
+		if (puertaAbierta) {
+			EstadoActual = PAUSA;
+			primerCocinando = true;
+		}
+		else {
 		if(primerCocinando) { //Nos aseguramos de que el 1er seg del tiempo de coccion dure 1 seg entero, ya que podria pasar que el flag de 1seg se active muy rapido
 			primerCocinando=false;
 			TIMER_ResetTimerSeg(); //Para que el 1er seg no sea corto 
@@ -204,27 +237,37 @@ void FSM_Update(void)
 			LCD_PrintTime(SegundosRestantes); //Solo actualizo cuando pasa 1 seg
 		}
 		
+		}
 		
 		
 		break;
 		
 		case PAUSA:
 		
-		if (hayTecla) {
-			 if (key == 'C') {
-				 SegundosRestantes += 30;
-				 LCD_PrintTime(SegundosRestantes);
-			 }
-			 else if (key == 'A') {  // reanudar con el tiempo que quedaba
-				 primerCocinando=true;
-				 EstadoActual = COCINANDO;
-			 }
-			 else if (key == 'B') {  // cancelar y volver a REPOSO
-				 Resetear_Digitos();
-				 SegundosRestantes = 0;
-				 EstadoActual = REPOSO;
-			 }
+		if(hayError) {
+			Procesar_Error();
+		}
+		else {
+			if (hayTecla) {
+				 if (key == 'C') {
+					 SegundosRestantes += 30;
+					 LCD_PrintTime(SegundosRestantes);
+				 }
+				 else if (key == 'A') { // reanudar con el tiempo que quedaba
+					 if (puertaAbierta) {
+						 Mostrar_Error(ERRORPUERTAABIERTA);
+					 } else {  
+					 primerCocinando=true;
+					 EstadoActual = COCINANDO;
+					   }
+					 }
+					else if (key == 'B') {  // cancelar y volver a REPOSO
+						Resetear_Digitos();
+						SegundosRestantes = 0;
+						EstadoActual = REPOSO;
+				 }
 		
+			}
 		}
 		break;
 		
