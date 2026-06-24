@@ -108,7 +108,46 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="dht11.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dht11.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="terminal.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rtc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="terminal.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="timer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="timer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="twi.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="twi.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="uart.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="uart.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>
