@@ -36,7 +36,7 @@ void KEYPAD_Init(void) {
 // ==============================================================================
 
 /**
- * @brief Fuerza filas a estado lógico alto (inactivo).
+ *  Fuerza filas a estado lógico alto (inactivo).
  */
 static void setAllRowsHigh(void) {
     PORTB |= (1 << PB4) | (1 << PB3) | (1 << PB0);
@@ -44,7 +44,7 @@ static void setAllRowsHigh(void) {
 }
 
 /**
- * @brief Establece una fila en estado bajo para escaneo.
+ *  Establece una fila en estado bajo para escaneo.
  * @param row Índice de la fila (0 a 3).
  */
 static void setRowLow(uint8_t row) {
@@ -59,7 +59,7 @@ static void setRowLow(uint8_t row) {
 }
 
 /**
- * @brief Lee estado lógico de columna.
+ *  Lee estado lógico de columna.
  * @param col Índice de la columna (0 a 3).
  * @return 1 si la columna está en estado bajo, 0 en caso contrario.
  */
@@ -74,7 +74,7 @@ static uint8_t readCol(uint8_t col) {
 }
 
 /**
- * @brief Escaneo matricial completo.
+ *  Escaneo matricial completo.
  * @return Caracter de tecla detectada o 0xFF si no hay detección.
  */
 static uint8_t KeypadUpdate(void) {

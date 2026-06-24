@@ -1,8 +1,8 @@
 /**
  * 
- * @brief Librería de control de actuadores de hardware.
- * Contiene las funciones para inicializar y controlar los actuadores del sistema
- * (Magnetrón, Luz interior y Alarma sonora).
+ *  Librería de control de actuadores de hardware (Salidas).
+ *  Contiene las funciones para inicializar y controlar los actuadores del sistema
+ *  (Magnetrón, Luz interior y Alarma sonora).
  */
 
 #ifndef ACTUADORES_H_
@@ -11,7 +11,7 @@
 #include <avr/io.h>
 
 /**
- * @brief Configura los pines correspondientes a los actuadores y los inicializa en estado bajo (apagados).
+ *  @brief Configura los pines correspondientes a los actuadores y los inicializa en estado bajo (apagados).
  */
 void ACTUADORES_Init(void);
 
@@ -20,12 +20,12 @@ void ACTUADORES_Init(void);
 // ==============================================================================
 
 /**
- * @brief Enciende el Magnetrón.
+ * @brief  Enciende el Magnetrón.
  */
 void ACTUADORES_MagnetronOn(void);
 
 /**
- * @brief Apaga el Magnetrón.
+ *  @brief Apaga el Magnetrón.
  */
 void ACTUADORES_MagnetronOff(void);
 
@@ -34,12 +34,12 @@ void ACTUADORES_MagnetronOff(void);
 // ==============================================================================
 
 /**
- * @brief Enciende la luz interior del microondas.
+ * @brief  Enciende la luz interior del microondas.
  */
 void ACTUADORES_LuzOn(void);
 
 /**
- * @brief Apaga la luz interior del microondas.
+ * @brief  Apaga la luz interior del microondas.
  */
 void ACTUADORES_LuzOff(void);
 
@@ -48,17 +48,17 @@ void ACTUADORES_LuzOff(void);
 // ==============================================================================
 
 /**
- * @brief Enciende la alarma sonora.
+ * @brief  Enciende la alarma sonora.
  */
 void ACTUADORES_AlarmaOn(void);
 
 /**
- * @brief Apaga la alarma sonora.
+ * @brief  Apaga la alarma sonora.
  */
 void ACTUADORES_AlarmaOff(void);
 
 /**
- * @brief Invierte (toggle) el estado actual de la alarma.
+ * @brief  Invierte (toggle) el estado actual de la alarma.
  */
 void ACTUADORES_AlarmaToggle(void);
 

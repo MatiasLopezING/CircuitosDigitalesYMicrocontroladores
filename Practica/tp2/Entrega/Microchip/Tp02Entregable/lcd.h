@@ -1,6 +1,6 @@
 /**
  * 
- * @brief Librería para control de display LCD HD44780.
+ *  Librería para control de display LCD HD44780.
  * 
  * Configurado para interfaz de 4 bits. Contiene definiciones de pines,
  * comandos de bajo nivel y funciones de alto nivel.
@@ -45,7 +45,7 @@
 #define LCDR  DDRD  // Registro de dirección (control)
 
 /**
- * @brief Macro para escribir en los puertos conectados al LCD.
+ *  Macro para escribir en los puertos conectados al LCD.
  * Asigna los bits 4,5,6 y 7 del dato a los pines físicos configurados.
  */
 #define LCD_DATAWR(Data) \
@@ -116,25 +116,25 @@ void LCDprogressBar(uint8_t progress, uint8_t maxprogress, uint8_t length);
 // ==============================================================================
 
 /**
- * @brief Inicializa el hardware del LCD y limpia la pantalla.
+ *  Inicializa el hardware del LCD y limpia la pantalla.
  */
 void LCD_Init(void);
 
 /**
- * @brief Imprime un tiempo dado en segundos en formato "MM:SS" en la primera línea.
+ *  Imprime un tiempo dado en segundos en formato "MM:SS" en la primera línea.
    @param seg donde recibo una cantidad dada de segundos
  */
 void LCD_PrintTime(uint16_t seg);
 
 /**
- * @brief Imprime los digitos recibidos por parametro en formato "M1M0:S1S0" en la primera línea.
+ *  Imprime los digitos recibidos por parametro en formato "M1M0:S1S0" en la primera línea.
    @param M1 decena de minutos, M0 unidad de minutos, S1 decena de segundos, S0 unidad de segundos
  */
 
 void LCD_PrintDigits(uint8_t M1,uint8_t M0,uint8_t S1,uint8_t S0);
 
 /**
- * @brief Enciende o apaga el display completamente sin perder los datos en memoria.
+ *  Enciende o apaga el display completamente sin perder los datos en memoria.
  * @param estado 0 = apagar, 1 = encender.
  */
 void LCD_SetearEstado(uint8_t estado);

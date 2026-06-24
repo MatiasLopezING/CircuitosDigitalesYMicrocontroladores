@@ -5,7 +5,7 @@
 #include "timer.h"
 #include <stdbool.h>
 
-#define TICKSERROR 200 //Defino la cantidad de ticks por los que mostrare un error en el LCD. Como FSM_Update() se hace cada 10 ms, mostrare el mensaje de error por 200*10ms= 2seg
+#define TICKSERROR 200  // Defino la cantidad de ticks por los que mostrare un error en el LCD. Como FSM_Update() se hace cada 10 ms, mostrare el mensaje de error por 200*10ms= 2seg
 #define TICKSDISPLAY 50 // Defino la cantidad de ticks por los que el display estara prendido/apagado al estar parpadeando. Como FSM_Update() se hace cada 10 ms, el display se apagara y prendera cada 50*10ms= 0,5 seg
 #define TICKSALARMA 50  // Defino la cantidad de ticks por los que la alarma estara prendido/apagado al estar conmutando entre estos estados. Como FSM_Update() se hace cada 10 ms, la alarma se apagara y prendera cada 50*10ms= 0,5 seg
 
@@ -18,27 +18,27 @@ typedef enum {
 
 //-------------------------Variables privadas de la MEF--------------------------------------//
 
-static state EstadoActual; //Guardare el estado actual de la MEF
+static state EstadoActual; //Estado actual de la MEF
 
-static uint16_t SegundosRestantes=0; //Variable de los segundos restantes de coccion
+static uint16_t SegundosRestantes=0; //Segundos restantes de coccion
 
 static bool hayError=false; //Variable para detectar errores
-static uint16_t ticksMostrarError; //Cuenta de ticks para los errores
+static uint16_t ticksMostrarError; //Cuenta de ticks para la muestra de los errores
 
-static bool primerTermino=true,primerCocinando=true; //Variables para saber si se acaba de transicionar al estado TERMINO o COCINANDO. Con estas sera posible asegurarnos que el primer segundo que pase dure exactamente 1 seg y no tenga una duracion menor
+static bool primerTermino=true,primerCocinando=true; //Variables para saber si se acaba de transicionar al estado TERMINO o COCINANDO. Con estas sera posible asegurarnos que el primer segundo que pase dure exactamente 1 seg y no tenga una duracion menor.
 
-static bool errorEnPausa; //Variable para saber cuando tenia la puerta abierta en el estado de pausa y poder mostrar el tiempo correspondiente en el display
+static bool errorEnPausa; //Variable para saber cuando se origino un error por la puerta abierta en el estado de PAUSA y poder mostrar el tiempo correspondiente en el display
 
 static uint8_t hayTecla; //Variable para saber si se detecto tecla del KEYPAD
-static uint8_t key; //Variable para guardar la tecla leida del KEYPAD
+static uint8_t key; //Tecla leida del KEYPAD
 
 static uint8_t ticksParpadeoDisplay=0,segTermino=0,estadoDisplay=1; //Variables para lograr el parpadeo del display en estado TERMINO
 
 static uint8_t ticksParpadeoAlarma=0; //Variable para contar ticks para el parpadeo de la alarma en TERMINO
 
-static uint8_t M1 = 0,M0 = 0,S1 = 0,S0 = 0; //Variables para los digitos a mostrar en el LCD (M1M0:S1S0)
+static uint8_t M1 = 0,M0 = 0,S1 = 0,S0 = 0; //Digitos a mostrar en el LCD (M1M0:S1S0)
 
-static bool puertaAbierta = false; //Variable para saber el estado de la puerta
+static bool puertaAbierta = false; //Estado de la puerta
 
 //-------------------------Funciones privadas de la MEF--------------------------------------//
 
@@ -56,7 +56,7 @@ static void Resetear_Digitos () { //Reseteo de los digitos a 00:00
 	S0=0;
 }
 
-static uint16_t Calculo_Segundos(void) { //Calculo de los segundos en base al tiempo seleccionado por el usuario (M1M0:S1S0)
+static uint16_t Calculo_Segundos(void) { //Calculo de los segundos en base a los digitos seleccionados por el usuario (M1M0:S1S0)
 	
 	return (M1*10 + M0)*60 + (S1*10 + S0);
 	
@@ -76,7 +76,7 @@ static bool Tiempo_Valido(void) //Funcion para saber si el tiempo es valido. Ej 
 	return true;
 }
 
-static void Mostrar_Error( Error_t error) { //Permite mostrar los tipos de errores definidos en el LCD
+static void Mostrar_Error( Error_t error) { //Permite mostrar los distintos tipos de errores en el LCD
 	
 		LCDclr();
 	    errorEnPausa = (EstadoActual == PAUSA);  //  Guardo contexto para saber que imprimir al terminar Procesar_error
@@ -111,7 +111,7 @@ static void Procesar_Error(){
 	 {
 		 hayError = false;
 		 LCDclr();
-		 if (errorEnPausa) // Si vengo de un error en pausa, es porque la puerta estaba abierta y quise reanudar la coccion, por lo que debo imprimir los segundos que se hayan establecido y no los digitos que habia ingresado inicialmente el usuario
+		 if (errorEnPausa) // Si vengo de un error en PAUSA, es porque la puerta estaba abierta y quise reanudar la coccion, por lo que debo imprimir los segundos que se hayan establecido y no los digitos que habia ingresado inicialmente el usuario
 		   LCD_PrintTime(SegundosRestantes);
 		 else
 		   LCD_PrintDigits(M1,M0,S1,S0);
@@ -161,7 +161,7 @@ void FSM_Update(void)
 								Mostrar_Error(ERRORPUERTAABIERTA);
 							}
 							else
-							if(Tiempo_Valido()) {
+							if(Tiempo_Valido()) { //Tiempo valido
 								SegundosRestantes=Calculo_Segundos();
 								if(SegundosRestantes) {
 									EstadoActual=COCINANDO;
@@ -171,7 +171,7 @@ void FSM_Update(void)
 								}
 							}
 							else {
-								Resetear_Digitos(); //Si puso tiempo invalido directamente reseteo -> Decision de modelado del problema
+								Resetear_Digitos(); //Si puso tiempo invalido directamente reseteo los digitos -> Decision de modelado del problema
 								Mostrar_Error(ERRORTIEMPOINVALIDO);
 							}
 						}
@@ -249,11 +249,11 @@ void FSM_Update(void)
 		}
 		else {
 			if (hayTecla) {
-				 if (key == 'C') {
+				 if (key == 'C') { //Agregar 30 segundos al tiempo de coccion
 					 SegundosRestantes += 30;
 					 LCD_PrintTime(SegundosRestantes);
 				 }
-				 else if (key == 'A') { // reanudar con el tiempo que quedaba
+				 else if (key == 'A') { // Reanudar con el tiempo que quedaba
 					 if (puertaAbierta) {
 						 Mostrar_Error(ERRORPUERTAABIERTA);
 					 } else {  
@@ -261,7 +261,7 @@ void FSM_Update(void)
 					 EstadoActual = COCINANDO;
 					   }
 					 }
-					else if (key == 'B') {  // cancelar y volver a REPOSO
+					else if (key == 'B') {  // Cancelar y volver a REPOSO
 						Resetear_Digitos();
 						LCD_PrintDigits(M1,M0,S1,S0);
 						SegundosRestantes = 0;
@@ -276,11 +276,11 @@ void FSM_Update(void)
 		
 		if (primerTermino) {
 			primerTermino=false;
-			TIMER_ResetTimerSeg();
+			TIMER_ResetTimerSeg(); //Para que el 1er seg no sea corto 
 			ACTUADORES_AlarmaOn();
 		}
 		
-
+		// Toggle de la alarma cada 500ms
 		if (++ticksParpadeoAlarma >= TICKSALARMA) {
 			ticksParpadeoAlarma = 0;
 			ACTUADORES_AlarmaToggle();

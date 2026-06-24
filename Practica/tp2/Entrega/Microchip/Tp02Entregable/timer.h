@@ -1,9 +1,8 @@
 /**
- * @file timer.h
- * @brief Librería para la configuración y manejo del Timer0.
  * 
- * Configura el Timer0 en modo CTC para generar una base de tiempos exacta,
- * utilizada para actualizar la máquina de estados y llevar la cuenta de tiempo.
+ * Librería para la configuración y manejo del Timer0.
+ * 
+ * 
  */
 
 #ifndef TIMER_H_
@@ -14,9 +13,18 @@
 extern volatile uint8_t flag_tick_10ms;
 extern volatile uint16_t flag_tick_1s ;
 
-
+/**
+ * @brief Inicializacion de Timer0 con tick cada 1ms.
+ * 
+ * 
+ */
 void TIMER_Init(void);
 
+/**
+ * @brief Reseteo del tick de timer para 1 seg.
+ * 
+ * 
+ */
 void TIMER_ResetTimerSeg();
 
 #endif /* TIMER_H_ */

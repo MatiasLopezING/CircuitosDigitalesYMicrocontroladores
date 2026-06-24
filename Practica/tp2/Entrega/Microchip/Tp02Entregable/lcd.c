@@ -18,7 +18,7 @@ const uint8_t LcdCustomChar[] PROGMEM=
 // ==============================================================================
 
 /**
- * @brief Envía un caracter ASCII al LCD.
+ * Envía un caracter ASCII al LCD.
  * @param ch Caracter a enviar.
  */
 void LCDsendChar(uint8_t ch){
