@@ -7,6 +7,7 @@
 
 #include "main.h"
 #define F_CPU 16000000UL
+#include <util/delay.h>
 static volatile bool flag_T,flag_comando;
 static volatile uint8_t T;
 
@@ -14,7 +15,9 @@ int main(void)
 {
 	sei();
     uart_init();
-	uart_enviarTelemetria("[ALERTA] [HH:MM:SS] Temperatura fuera de rango diurno! Valor: 34°C");
+	terminal_enviarMensaje("[ALERTA] Temperatura fuera de rango diurno! Valor: 34 C");
+	_delay_ms(1000);
+	terminal_enviarMensaje("PEPEPE");
     while (1) 
     {
 		
