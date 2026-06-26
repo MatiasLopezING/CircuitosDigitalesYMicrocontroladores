@@ -135,13 +135,13 @@
     <Compile Include="parser.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtc.h">
+    <Compile Include="ds3231.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="terminal.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="rtc.c">
+    <Compile Include="ds3231.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="terminal.h">
@@ -153,10 +153,10 @@
     <Compile Include="timer.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="twi.c">
+    <Compile Include="i2c.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="twi.h">
+    <Compile Include="i2c.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="uart.c">
