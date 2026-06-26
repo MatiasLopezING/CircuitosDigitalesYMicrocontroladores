@@ -20,7 +20,10 @@ void uart_init();
 void uart_setUDRIE0();
 void uart_limpiarBuffer();
 void uart_cargarByteBuffer(const char c);
-bool uart_hayComando ();
+bool uart_leerByteBuffer( char * c);
+bool uart_hayComando();
+void uart_resetearRx();
+bool uart_huboOV();
 
 
 #endif /* UART_H_ */

@@ -6,7 +6,11 @@
  */ 
 
 #include "terminal.h"
-
+ 
+static char comando[SIZE_COMANDO_MAX];
+static char comando_listo[SIZE_COMANDO_MAX];
+static uint8_t pos=0;
+static bool comando_Pendiente=false;
 
 void terminal_enviarMensaje(const char * mensaje) {
 	uart_limpiarBuffer();
@@ -19,6 +23,53 @@ void terminal_enviarMensaje(const char * mensaje) {
 	uart_cargarByteBuffer('\0'); //Finalizacion de cadena
 	uart_setUDRIE0(); //Habilito interrupcion por UDR de Transmision empty
 
+}
+
+void terminal_poll() {
+	char c;
+
+	if (uart_huboOV())
+	{
+		uart_resetearRx();
+		pos = 0;
+		terminal_enviarMensaje("ERROR: overflow. Vuelva a ingresar comandos");
+		return;
+	}
+
+	while (uart_leerByteBuffer(&c))
+	{
+		
+
+		if (c == '\n' || c == '\r')
+		{
+				comando[pos] = '\0';
+				strlcpy(comando_listo, comando,SIZE_COMANDO_MAX);
+				comando_Pendiente = true;
+				pos = 0;
+		}
+		else 
+			if (pos < SIZE_COMANDO_MAX - 1) {
+				comando[pos++] = c;
+				}
+			else
+			{
+				uart_resetearRx();
+				pos = 0;
+				terminal_enviarMensaje("ERROR: Comando demasiado largo. Ingrese uno valido.");
+			}
+		
+	}
+}
+
+bool terminal_hayComando() {
+	return comando_Pendiente;
+}
+
+void terminal_getComando(char * com) {
+
+		strcpy(com, comando_listo);
+		comando_Pendiente = false;
+	
 }
 
 void terminal_limpiar() { //Todavia tengo que decidir como hacer esto y a su vez como manejar que el usuario vea el comando que estaba escribiendo
