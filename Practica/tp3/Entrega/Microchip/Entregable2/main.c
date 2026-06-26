@@ -13,32 +13,52 @@ static char comando[SIZE_COMANDO_MAX];
 static type_Cmd tipoCmd;
 static type_Data dataCmd;
 static type_statusCmd estado;
+static type_rtcTime hora;
+static char telemetria [TELEMETRIA_LEN], alerta [ALERTA_LEN];
+static uint8_t contador_alertas=0;
+static type_rtcTime horaNueva;
 
 int main(void)
 {
 	sei();
     uart_init();
 	timer_init();
-	
+	i2c_init();
+	ds3231_init();
     while (1) 
     {
+		
+		
 		terminal_poll(); //Consumo los caracteres que coloca el usuario como comando
 		if (timer_pasoT()){ //Logica cada T segundos
 
-			 
-			 //rtc_getTime(&hora);
-			 //dht11_read(&temp, &hum);
-			 
-			// uint8_t estadoSis = evaluar_rangos(hora, temp, hum); // NORMAL o ALERTA
-			// enviar_telemetria(hora, temp, hum, estado);
-			 
-			// if (estadoSis == ALERTA) {
-			//	 contador_alertas++;
-			//	 if (contador_alertas % 2 == 0)  // cada 2 tramas
-			//		enviar_alerta(hora, temp, hum);
-			 //}
-			 //Me va a conveir hacer en el parser una funcion que le paso hora, temp, humedad y estado y me arma el string para enviar a la terminal
-			terminal_enviarMensaje("[HH:MM:SS] T: XX°C | H: XX% | Estado: NORMAL/ALERTA");
+			 if(ds3231_getTime(&hora)) {
+				 //dht11_readTempHum(&temp, &hum) Falta implementar
+				 type_VentanaHor ventana= parser_getVentana(&hora);
+				 type_Estado estado=parser_getEstado(ventana,17,70); //NORMAL o ALERTA
+				
+		
+				 if (estado != ESTADO_NORMAL) {
+					 contador_alertas++;
+					 
+					 if (contador_alertas % 3 == 0) {
+						parser_getAlerta(alerta, &hora, ventana, estado,17,70);
+						terminal_enviarMensaje(alerta);
+					 }
+					 else {
+						 parser_getTelemetria(telemetria,&hora,17,70,estado);
+						 terminal_enviarMensaje(telemetria);
+					 }
+				} else {
+					 contador_alertas = 0;  // reset al volver a normal
+					 parser_getTelemetria(telemetria,&hora,17,70,estado);
+					 terminal_enviarMensaje(telemetria);
+				 }
+			 } else {
+				 terminal_enviarMensaje("ERROR: DS3231 no responde");
+			  } 
+			
+			
 		}
 		
 		if (terminal_hayComando()) { //Procesar comando
@@ -55,8 +75,12 @@ int main(void)
 				 switch (tipoCmd)
 				 {
 					 case CMD_SET_TIME:
-
-					 //rtc_setHora(dataCmd.hora.hora,dataCmd.hora.minutos,dataCmd.hora.segundos);
+					 
+				
+					 horaNueva.hours=dataCmd.hora.hora;
+					 horaNueva.minutes=dataCmd.hora.minutos;
+					 horaNueva.seconds=dataCmd.hora.segundos;
+					 ds3231_setTime(&horaNueva);
 
 					 terminal_enviarMensaje("Hora actualizada.");
 					 break;

@@ -10,7 +10,7 @@
 #define TERMINAL_H_
 
 #include "uart.h"
-#define SIZE_BUFFERTX_MAX 67
+#define SIZE_BUFFERTX_MAX 80
 #define SIZE_BUFFERRX_MAX 19
 #define SIZE_COMANDO_MAX 19 
 

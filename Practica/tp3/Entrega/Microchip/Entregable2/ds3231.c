@@ -8,7 +8,6 @@ static uint8_t dec2bcd(uint8_t val) { return ((val / 10) << 4) | (val % 10); }
 static uint8_t bcd2dec(uint8_t val) { return ((val >> 4) * 10) + (val & 0x0F); }
 
 void ds3231_init(void) {
-	i2c_init();
 	// Nos aseguramos que el bit 6 del registro de horas esté en 0 (modo 24h)
 	// Leemos primero para no pisar otros bits
 	uint8_t hour_reg;
@@ -19,7 +18,7 @@ void ds3231_init(void) {
 }
 
 // Lee segundos, minutos y horas en una sola ráfaga de 3 bytes
-uint8_t ds3231_get_time(rtc_time_t *t) {
+uint8_t ds3231_getTime(type_rtcTime *t) {
 	uint8_t buf[3];
 	if (!i2c_read_burst(DS3231_ADDR, DS3231_REG_SEC, buf, 3))
 	return 0;
@@ -30,7 +29,7 @@ uint8_t ds3231_get_time(rtc_time_t *t) {
 	return 1;
 }
 
-uint8_t ds3231_set_time(const rtc_time_t *t) {
+uint8_t ds3231_setTime(const type_rtcTime *t) {
 	// Validación básica
 	if (t->hours > 23 || t->minutes > 59 || t->seconds > 59)
 	return 0;
@@ -45,6 +44,6 @@ uint8_t ds3231_set_time(const rtc_time_t *t) {
 	return 1;
 }
 
-uint8_t ds3231_is_daytime(const rtc_time_t *t) {
+uint8_t ds3231_isDaytime(const type_rtcTime *t) {
 	return (t->hours >= 7 && t->hours <= 18);
 }

@@ -21,7 +21,7 @@ uint8_t i2c_write(uint8_t data);
 uint8_t i2c_read_ack(void);
 uint8_t i2c_read_nack(void);
 
-// Helpers de alto nivel
+
 uint8_t i2c_write_reg(uint8_t dev_addr, uint8_t reg, uint8_t data);
 uint8_t i2c_read_reg(uint8_t dev_addr, uint8_t reg, uint8_t *data);
 uint8_t i2c_read_burst(uint8_t dev_addr, uint8_t reg, uint8_t *buf, uint8_t len);

@@ -112,3 +112,46 @@ static uint8_t esDigito(char c)
 	return (c >= '0' && c <= '9');
 }
 
+
+void parser_getTelemetria(char *buf, const type_rtcTime *hora,
+uint8_t temp, uint8_t hum, type_Estado estado) {
+	sprintf(buf, "[%02u:%02u:%02u] T: %u C | H: %u%% | Estado: %s",
+	hora->hours,
+	hora->minutes,
+	hora->seconds,
+	temp,
+	hum,
+	(estado == ESTADO_NORMAL) ? "NORMAL" : "ALERTA");
+}
+
+
+type_Estado parser_getEstado(type_VentanaHor ventana, uint8_t temp, uint8_t hum) {
+	if (ventana == VENTANA_DIA) {
+		if (temp < 20 || temp > 30) return ESTADO_ALERTA_TEMP;
+		if (hum  < 50 || hum  > 70) return ESTADO_ALERTA_HUM;
+		} else {
+		if (temp < 15 || temp > 22) return ESTADO_ALERTA_TEMP;
+		if (hum  < 60 || hum  > 80) return ESTADO_ALERTA_HUM;
+	}
+	return ESTADO_NORMAL;
+}
+
+void parser_getAlerta(char *buf, const type_rtcTime *hora,type_VentanaHor ventana, type_Estado estado,uint8_t temp, uint8_t hum) {
+	const char *ventana_str = (ventana == VENTANA_DIA) ? "diurno" : "nocturno";
+
+	if (estado == ESTADO_ALERTA_TEMP) {
+		sprintf(buf, "[ALERTA] [%02u:%02u:%02u] Temperatura fuera de rango %s! Valor: %u C",
+		hora->hours, hora->minutes, hora->seconds,
+		ventana_str, temp);
+		} else if (estado == ESTADO_ALERTA_HUM) {
+		sprintf(buf, "[ALERTA] [%02u:%02u:%02u] Humedad fuera de rango %s! Valor: %u%%",
+		hora->hours, hora->minutes, hora->seconds,
+		ventana_str, hum);
+	}
+}
+
+
+type_VentanaHor parser_getVentana(const type_rtcTime *t) {
+	return (t->hours >= 7 && t->hours <= 18) ? VENTANA_DIA : VENTANA_NOCHE;
+}
+

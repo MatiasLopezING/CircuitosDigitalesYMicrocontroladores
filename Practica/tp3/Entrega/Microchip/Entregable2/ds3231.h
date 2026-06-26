@@ -14,13 +14,13 @@ typedef struct {
 	uint8_t seconds;
 	uint8_t minutes;
 	uint8_t hours;
-} rtc_time_t;
+} type_rtcTime;
 
 void    ds3231_init(void);
-uint8_t ds3231_get_time(rtc_time_t *t);
-uint8_t ds3231_set_time(const rtc_time_t *t);
+uint8_t ds3231_getTime(type_rtcTime *t);
+uint8_t ds3231_setTime(const type_rtcTime *t);
 
 // Devuelve 1 si la hora es diurna (07:00 - 18:59)
-uint8_t ds3231_is_daytime(const rtc_time_t *t);
+uint8_t ds3231_isDaytime(const type_rtcTime *t);
 
 #endif

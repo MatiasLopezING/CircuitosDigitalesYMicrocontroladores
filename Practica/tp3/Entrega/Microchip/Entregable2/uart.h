@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <avr/interrupt.h>
-#define SIZE_BUFFERTX_MAX 64
+#define SIZE_BUFFERTX_MAX 80
 #define SIZE_BUFFERRX_MAX 19
 
 void uart_init();
