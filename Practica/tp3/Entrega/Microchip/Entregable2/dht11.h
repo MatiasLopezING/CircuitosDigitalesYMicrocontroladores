@@ -1,11 +1,10 @@
-/*
- * dht11.h
+/**
+ * @file    dht11.h
+ * @brief   Driver bloqueante para el sensor DHT11 (temperatura y humedad) sobre PC0.
  *
- * Driver para sensor de temperatura y humedad DHT11.
- * Comunicacion por protocolo 1-wire single-bus en PC0.
- *
- * Implementacion bloqueante: dht11_read() deshabilita interrupciones
- * globales durante la lectura (~22ms) para garantizar timing preciso.
+ * Protocolo single-bus de 1 hilo con pull-up externo de 10 k.
+ * dht11_read() deshabilita interrupciones globales (~22 ms) para garantizar
+ * el timing preciso del protocolo.
  */
 
 #ifndef DHT11_H_
@@ -34,18 +33,16 @@ typedef enum {
 } dht11_status_t;
 
 /*
- * dht11_read - Lee temperatura y humedad del sensor.
- *
- * Parametros:
- *   temp  - puntero donde se almacena la temperatura en grados Celsius
- *   hum   - puntero donde se almacena la humedad relativa en porcentaje
- *
- * Retorna:
- *   DHT11_OK      si la lectura fue exitosa (temp y hum son validos)
- *   DHT11_TIMEOUT si el sensor no respondio (temp y hum no se modifican)
- *   DHT11_CHKSUM  si el checksum fallo    (temp y hum no se modifican)
- *
- * Nota: esta funcion es bloqueante ~22ms con interrupciones deshabilitadas.
+  @brief   Lee temperatura y humedad del sensor DHT11 (bloqueante ~22 ms).
+
+  Ejecuta el protocolo completo: start signal, handshake y recepcion de 40 bits.
+  Deshabilita interrupciones globales durante toda la lectura con cli()/sei().
+
+  @param   temp  Puntero donde se almacena la temperatura entera en grados Celsius.
+  @param   hum   Puntero donde se almacena la humedad relativa entera en porcentaje.
+  @return  DHT11_OK      Lectura exitosa; *temp y *hum son validos.
+  @return  DHT11_TIMEOUT El sensor no respondio en el tiempo esperado.
+  @return  DHT11_CHKSUM  Checksum incorrecto; dato descartado.
  */
 dht11_status_t dht11_read(uint8_t *temp, uint8_t *hum);
 

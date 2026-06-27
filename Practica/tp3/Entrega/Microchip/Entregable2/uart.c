@@ -1,41 +1,44 @@
-/*
- * uart.c
+/**
+ * @file    uart.c
+ * @brief   Driver UART para el ATmega328P a 16 MHz, 9600 bps 8N1.
  *
- * Driver UART para el ATmega328P a 16MHz.
- * Implementa comunicacion serie asincronica a 9600bps con formato 8N1
- * mediante interrupciones para recepcion (USART_RX_vect) y transmision
- * (USART_UDRE_vect), con buffers para cada canal.
+ * Implementa comunicacion serie asincronica mediante ISR de recepcion
+ * (USART_RX_vect) y transmision (USART_UDRE_vect), con buffers independientes
+ * para cada canal.
  */
 #include "uart.h"
 
-//Buffer para la transmision (lineal)
-static char bufferTx [SIZE_BUFFERTX_MAX]; 
+/* Buffer lineal de transmision. Se llena desde el foreground y se vacia en la ISR. */
+static char bufferTx[SIZE_BUFFERTX_MAX];
+
 /*
   Buffer circular de recepcion.
-  Volatile porque es escrito por la ISR y leido por el main (foreground).
-  Se deja una posicion libre para distinguir buffer lleno de buffer vacio:
-     headRx == tailRx  ? buffer vacio
-    (headRx + 1) % SIZE == tailRx ? buffer lleno
+  volatile: escrito por la ISR USART_RX_vect, leido desde el foreground.
+  Se deja una posicion libre para distinguir lleno de vacio:
+    headRx == tailRx               -> buffer vacio
+    (headRx + 1) % SIZE == tailRx  -> buffer lleno
  */
-static volatile char bufferRx [SIZE_BUFFERRX_MAX]; 
-/*
-  Indices del buffer de transmision:
-    headTx: proxima posicion libre para escribir.
-    tailTx: proximo byte a transmitir por la ISR.
-  Indices del buffer de recepcion:
-    headRx: proxima posicion libre para escribir (ISR).
-    tailRx: proximo byte a leer.
- */
-static volatile uint8_t headTx=0,tailTx=0, headRx=0, tailRx=0; 
-//Flag de overflow en caso de bufferRx lleno
-static bool flag_OF=false;
+static volatile char bufferRx[SIZE_BUFFERRX_MAX];
 
 /*
-  Inicializa el periférico USART0 a 9600bps, formato de trama 8N1.
+  Indices de los buffers:
+    headTx: proxima posicion libre para escribir en TX (foreground).
+    tailTx: proximo byte a transmitir en TX (ISR USART_UDRE_vect).
+    headRx: proxima posicion libre para escribir en RX (ISR USART_RX_vect).
+    tailRx: proximo byte disponible para leer en RX (foreground).
+ */
+static volatile uint8_t headTx = 0, tailTx = 0, headRx = 0, tailRx = 0;
+
+/* Flag de overflow del buffer RX. Se activa cuando la ISR no puede almacenar un byte. */
+static bool flag_OF = false;
+
+/*
+  @brief   Inicializa el periferico USART0 a 9600 bps, trama 8N1.
+
+  Configura UBRR0 para 9600 bps a 16 MHz (UBRR = 103).
   Habilita TX, RX y la interrupcion de recepcion por byte (RXCIE0).
-
  */
-void uart_init() { 
+void uart_init(void) {
 	//BaudRate=16Mhz/(UBRR+1)16 con BaudRate=9600 -> UBRR=103
 	UBRR0=103;
 	UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0)  ; 
@@ -106,7 +109,7 @@ void uart_resetearRx()
 
 /*
   @brief Indica si ocurrio un overflow en el buffer de recepcion.
-  El overflow se produce cuando la ISR no puede almacenar un byte porque el buffer está lleno.
+  El overflow se produce cuando la ISR no puede almacenar un byte porque el buffer estï¿½ lleno.
  
   @return True Si hubo overflow 
   @return False en caso contrario.
@@ -117,12 +120,13 @@ bool uart_huboOV(){
 
  
 /*
- * ISR de recepcion UART.
- * Se ejecuta cada vez que llega un byte completo al registro UDR0.
- * Almacena el byte en el buffer circular bufferRx.
- * Si el buffer está lleno activa flag_OF y descarta el byte. */
+  @brief   ISR de recepcion UART (USART_RX_vect).
 
-ISR(USART_RX_vect) { 
+  Se ejecuta cada vez que llega un byte completo al registro UDR0.
+  Almacena el byte en el buffer circular bufferRx.
+  Si el buffer esta lleno activa flag_OF y descarta el byte.
+ */
+ISR(USART_RX_vect) {
 
 	char c = UDR0;
 	
@@ -143,11 +147,13 @@ ISR(USART_RX_vect) {
 }
 
 /*
-  ISR de transmision UART.
-  Se ejecuta cada vez que el registro UDR0 esta listo para recibir un nuevo byte. Transmite el siguiente byte de bufferTx.
-  Cuando encuentra el '\0' termina la transmision: limpia el buffer y deshabilita UDRIE0 hasta el proximo mensaje.
+  @brief   ISR de transmision UART (USART_UDRE_vect).
+
+  Se ejecuta cada vez que el registro UDR0 esta listo para un nuevo byte.
+  Transmite el siguiente byte de bufferTx. Cuando encuentra el '\0' finaliza
+  la transmision: limpia el buffer y deshabilita UDRIE0.
  */
-ISR(USART_UDRE_vect) { 
+ISR(USART_UDRE_vect) {
 	
 	if (  bufferTx[tailTx] != '\0'){
 		UDR0=bufferTx[tailTx++];

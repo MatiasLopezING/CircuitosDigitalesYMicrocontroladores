@@ -1,9 +1,9 @@
-/*
- * timer.c
+/**
+ * @file    timer.c
+ * @brief   Driver de temporizacion para el ATmega328P a 16 MHz.
  *
- * Driver de temporizacion para el ATmega328P a 16MHz.
- * Utiliza Timer1 en modo CTC para generar una interrupcion periodica
- * cada 10ms (100Hz), a partir de la cual se cuenta el periodo T
+ * Utiliza Timer1 en modo CTC para generar una interrupcion cada 10 ms (100 Hz).
+ * A partir de los ticks acumulados se detecta el vencimiento del periodo T,
  * configurable entre 2 y 60 segundos.
  */
 
@@ -65,11 +65,12 @@ bool timer_pasoT() {
 }
 
 /*
-  ISR del Timer1, registro comparador A.
-  Se ejecuta cada 10ms.
-  Incrementa el contador de ticks y activa flag_T cuando se completa el periodo T configurado.
+  @brief   ISR del Timer1 (TIMER1_COMPA_vect), se ejecuta cada 10 ms.
+
+  Incrementa el contador de ticks y activa flag_T cuando se completa
+  el periodo T configurado.
  */
-ISR (TIMER1_COMPA_vect) { 
+ISR(TIMER1_COMPA_vect) {
 	
 	if (++ticks==ticks_T) { 
 		flag_T=true;

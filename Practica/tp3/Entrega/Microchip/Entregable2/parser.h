@@ -1,10 +1,12 @@
-/*
- * parser.h
+/**
+ * @file    parser.h
+ * @brief   Modulo de parseo de comandos y generacion de mensajes de telemetria/alerta.
  *
- * Created: 6/25/2026 10:28:11 PM
- *  Author: tomas
- */ 
-
+ * Define los tipos de comando (SET_TIME, SET_T), los estados del invernadero
+ * (NORMAL, ALERTA_TEMP, ALERTA_HUM) y las ventanas horarias (DIA/NOCHE).
+ * Expone funciones para parsear la entrada del usuario y armar los strings
+ * de salida hacia la terminal.
+ */
 
 #ifndef PARSER_H_
 #define PARSER_H_
@@ -13,46 +15,62 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "ds3231.h"
-#define TELEMETRIA_LEN 50 // "[HH:MM:SS] T: XX°C | H: XX% | Estado: NORMAL\r\n"
-#define ALERTA_LEN 80 //[ALERTA] [HH:MM:SS] Temperatura fuera de rango nocturno! Valor: XX°C\r\n
 
+/* Longitud maxima del buffer de telemetria: "[HH:MM:SS] T: XX C | H: XX% | Estado: NORMAL\r\n\0" */
+#define TELEMETRIA_LEN 50
+
+/* Longitud maxima del buffer de alerta: "[ALERTA] [HH:MM:SS] Temperatura fuera de rango nocturno! Valor: XX C\0" */
+#define ALERTA_LEN 80
+
+/* Tipo de comando recibido por la terminal. */
 typedef enum {
-	 CMD_SET_TIME,
-	 CMD_SET_T,
-	 //CMD_INVALID,
+	CMD_SET_TIME,   /* Actualizar hora del RTC: SET_TIME=HH:MM:SS */
+	CMD_SET_T,      /* Actualizar periodo de reporte: SET_T=T      */
 } type_Cmd;
 
+/* Datos de hora para CMD_SET_TIME. */
 typedef struct {
 	uint8_t hora;
 	uint8_t minutos;
 	uint8_t segundos;
 } type_DataHora;
 
+/* Datos de periodo para CMD_SET_T. */
 typedef struct {
 	uint16_t periodoT;
 } type_DataPeriodo;
 
+/* Union que agrupa los datos de cualquier tipo de comando. */
 typedef union {
-	type_DataHora hora;
+	type_DataHora    hora;
 	type_DataPeriodo periodo;
 } type_Data;
 
+/* Estado actual del invernadero segun los umbrales de la ventana horaria. */
 typedef enum {
-	ESTADO_NORMAL = 0,
-	ESTADO_ALERTA_TEMP,
-	ESTADO_ALERTA_HUM,
+	ESTADO_NORMAL      = 0,  /* Temperatura y humedad dentro del rango */
+	ESTADO_ALERTA_TEMP,      /* Temperatura fuera de rango             */
+	ESTADO_ALERTA_HUM,       /* Humedad fuera de rango                 */
 } type_Estado;
 
+/* Ventana horaria activa segun la hora del RTC. */
 typedef enum {
-	VENTANA_DIA = 0,
-	VENTANA_NOCHE
+	VENTANA_DIA   = 0,  /* 07:00 - 18:59 */
+	VENTANA_NOCHE,      /* 19:00 - 06:59 */
 } type_VentanaHor;
 
-typedef enum {PARSER_OK,PARSER_CMD_INVALID,PARSER_FORMAT_INVALID,PARSER_RANGE_ERROR,} type_statusCmd;
+/* Resultado del parseo de un comando. */
+typedef enum {
+	PARSER_OK,              /* Comando valido y datos en rango         */
+	PARSER_CMD_INVALID,     /* Comando desconocido                     */
+	PARSER_FORMAT_INVALID,  /* Comando conocido pero formato incorrecto */
+	PARSER_RANGE_ERROR,     /* Formato correcto pero valor fuera de rango */
+} type_statusCmd;
 
-type_statusCmd parser_parsearCmd(const char *cmd, type_Cmd *tipo, type_Data *data);
-void parser_getTelemetria(char *buf, const type_rtcTime *hora,uint8_t temp, uint8_t hum, type_Estado estado);
-type_Estado parser_getEstado(type_VentanaHor ventana, uint8_t temp, uint8_t hum);
-void parser_getAlerta(char *buf, const type_rtcTime *hora,type_VentanaHor ventana, type_Estado estado, uint8_t temp, uint8_t hum);
+type_statusCmd  parser_parsearCmd(const char *cmd, type_Cmd *tipo, type_Data *data);
+void            parser_getTelemetria(char *buf, const type_rtcTime *hora, uint8_t temp, uint8_t hum, type_Estado estado);
+type_Estado     parser_getEstado(type_VentanaHor ventana, uint8_t temp, uint8_t hum);
+void            parser_getAlerta(char *buf, const type_rtcTime *hora, type_VentanaHor ventana, type_Estado estado, uint8_t temp, uint8_t hum);
 type_VentanaHor parser_getVentana(const type_rtcTime *t);
+
 #endif /* PARSER_H_ */

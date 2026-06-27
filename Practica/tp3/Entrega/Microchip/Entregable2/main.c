@@ -1,16 +1,25 @@
-
+/**
+ * @file    main.c
+ * @brief   Monitor de invernadero TP3 - Punto de entrada y bucle principal.
+ *
+ * Arquitectura foreground/background:
+ *   - Background (main while): consume comandos UART, lee sensores cada T segundos
+ *     y envia telemetria o alertas segun el estado del invernadero.
+ *   - Foreground (ISRs): Timer1 (tick 10 ms), USART RX (recepcion), USART UDRE (TX).
+ */
 #include "main.h"
 
-static volatile bool flag_T,flag_comando;
-static volatile uint8_t T;
-static char comando[SIZE_COMANDO_MAX];
-static type_Cmd tipoCmd;
-static type_Data dataCmd;
-static type_statusCmd estado;
-static type_rtcTime hora;
-static char telemetria [TELEMETRIA_LEN], alerta [ALERTA_LEN];
-static uint8_t contador_alertas=0;
-static type_rtcTime horaNueva;
+static volatile bool flag_T, flag_comando;  /* Flags de sincronizacion ISR -> main      */
+static volatile uint8_t T;                  /* Periodo de reporte en segundos (2-60)    */
+static char           comando[SIZE_COMANDO_MAX]; /* Buffer del comando en curso          */
+static type_Cmd       tipoCmd;              /* Tipo del ultimo comando parseado          */
+static type_Data      dataCmd;              /* Datos del ultimo comando parseado         */
+static type_statusCmd estado;               /* Resultado del parseo del comando          */
+static type_rtcTime   hora;                 /* Hora actual leida del DS3231             */
+static char           telemetria[TELEMETRIA_LEN]; /* Buffer de mensaje de telemetria    */
+static char           alerta[ALERTA_LEN];         /* Buffer de mensaje de alerta        */
+static uint8_t        contador_alertas = 0; /* Cuenta alertas consecutivas (alerta cada 3) */
+static type_rtcTime   horaNueva;            /* Nueva hora a escribir en el DS3231        */
 
 int main(void)
 {

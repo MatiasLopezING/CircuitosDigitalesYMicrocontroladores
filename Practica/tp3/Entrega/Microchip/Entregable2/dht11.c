@@ -1,7 +1,6 @@
-/*
-dht * dht11.c
- *
- * Driver bloqueante para DHT11 sobre PC0.
+/**
+ * @file    dht11.c
+ * @brief   Driver bloqueante para DHT11 sobre PC0.
  *
  * Protocolo (single-bus):
  *   1. MCU tira PC0 a LOW por 18ms (start signal)
@@ -37,12 +36,13 @@ dht * dht11.c
 #define DHT11_TIMEOUT_ITER  500u
 
 /*
- * wait_pin - Espera hasta que PC0 alcance el nivel 'esperado'.
- *
- * Parametros:
- *   esperado - 0 para esperar LOW, distinto de 0 para esperar HIGH
- *
- * Retorna 1 si el pin alcanzo el nivel esperado, 0 si ocurrio timeout.
+  @brief   Espera a que PC0 alcance el nivel logico indicado.
+
+  Itera con un contador de guarda para evitar cuelgues si el sensor no responde.
+
+  @param   esperado  0 para esperar LOW, cualquier otro valor para esperar HIGH.
+  @return  1 si el pin alcanzo el nivel esperado antes del timeout.
+  @return  0 si se supero DHT11_TIMEOUT_ITER iteraciones sin cambio.
  */
 static uint8_t wait_pin(uint8_t esperado)
 {
@@ -62,6 +62,20 @@ static uint8_t wait_pin(uint8_t esperado)
     return 1;
 }
 
+/*
+  @brief   Ejecuta el protocolo DHT11 completo y retorna temperatura y humedad.
+
+  Secuencia: start signal (18 ms LOW) -> handshake (80 us + 80 us) -> 40 bits.
+  Tecnica de muestreo: se espera el flanco ascendente de cada bit y se muestrea
+  a 30 us; si el pin sigue HIGH es bit 1 (~70 us), si ya bajo es bit 0 (~26 us).
+  Las interrupciones permanecen deshabilitadas durante toda la funcion (~22 ms).
+
+  @param   temp  Puntero donde se escribe la temperatura entera en grados Celsius.
+  @param   hum   Puntero donde se escribe la humedad relativa entera en porcentaje.
+  @return  DHT11_OK      Lectura y checksum correctos; *temp y *hum son validos.
+  @return  DHT11_TIMEOUT El sensor no respondio en algun punto del protocolo.
+  @return  DHT11_CHKSUM  El checksum no coincide; *temp y *hum no se modifican.
+ */
 dht11_status_t dht11_read(uint8_t *temp, uint8_t *hum)
 {
     uint8_t data[5] = {0, 0, 0, 0, 0};
