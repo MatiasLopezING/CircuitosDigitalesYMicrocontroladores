@@ -163,63 +163,66 @@ static uint8_t esDigito(char c)
  */
 void parser_getTelemetria(char *buf, const type_rtcTime *hora,
 uint8_t temp, uint8_t hum, type_Estado estado) {
-	sprintf(buf, "[%02u:%02u:%02u] T: %u C | H: %u%% | Estado: %s",
-	hora->hours,
-	hora->minutes,
-	hora->seconds,
-	temp,
-	hum,
-	(estado == ESTADO_NORMAL) ? "NORMAL" : "ALERTA");
+	sprintf(buf, "[%02u:%02u:%02u] T: %u C | H: %u%% | Estado: %s",hora->hours,hora->minutes,hora->seconds,temp,hum,(estado == ESTADO_NORMAL) ? "NORMAL" : "ALERTA");
 }
-
 
 /*
   @brief   Determina el estado del invernadero segun la ventana horaria y los valores de sensor.
-
   Umbrales diurnos:  temperatura 20-30 C, humedad 50-70%.
   Umbrales nocturnos: temperatura 15-22 C, humedad 60-80%.
 
   @param   ventana  Ventana horaria activa (VENTANA_DIA o VENTANA_NOCHE).
   @param   temp     Temperatura medida en grados Celsius.
   @param   hum      Humedad relativa medida en porcentaje.
-  @return  ESTADO_NORMAL, ESTADO_ALERTA_TEMP o ESTADO_ALERTA_HUM.
+  @return  ESTADO_NORMAL, ESTADO_ALERTA_TEMP, ESTADO_ALERTA_HUM o ESTADO_ALERTA_TEMP_HUM.
  */
 type_Estado parser_getEstado(type_VentanaHor ventana, uint8_t temp, uint8_t hum) {
-	if (ventana == VENTANA_DIA) {
-		if (temp < 20 || temp > 30) return ESTADO_ALERTA_TEMP;
-		if (hum  < 50 || hum  > 70) return ESTADO_ALERTA_HUM;
-		} else {
-		if (temp < 15 || temp > 22) return ESTADO_ALERTA_TEMP;
-		if (hum  < 60 || hum  > 80) return ESTADO_ALERTA_HUM;
-	}
-	return ESTADO_NORMAL;
+    bool temp_fuera, hum_fuera;
+
+    if (ventana == VENTANA_DIA) {
+        temp_fuera = (temp < 20 || temp > 30);
+        hum_fuera  = (hum  < 50 || hum  > 70);
+    } else {
+        temp_fuera = (temp < 15 || temp > 22);
+        hum_fuera  = (hum  < 60 || hum  > 80);
+    }
+
+    if (temp_fuera && hum_fuera) return ESTADO_ALERTA_TEMP_HUM;
+    if (temp_fuera)              return ESTADO_ALERTA_TEMP;
+    if (hum_fuera)               return ESTADO_ALERTA_HUM;
+    return ESTADO_NORMAL;
 }
 
 /*
   @brief   Arma el string de alerta en buf cuando el estado no es NORMAL.
-
-  Formato: "[ALERTA] [HH:MM:SS] Temperatura/Humedad fuera de rango diurno/nocturno! Valor: XX"
+  Para ESTADO_ALERTA_TEMP_HUM imprime ambos valores en el mismo mensaje.
   El buffer debe tener al menos ALERTA_LEN bytes.
 
   @param   buf      Buffer destino.
   @param   hora     Hora actual leida del RTC.
   @param   ventana  Ventana horaria activa.
-  @param   estado   Estado de alerta (ESTADO_ALERTA_TEMP o ESTADO_ALERTA_HUM).
+  @param   estado   Estado de alerta (ESTADO_ALERTA_TEMP, ESTADO_ALERTA_HUM o ESTADO_ALERTA_TEMP_HUM).
   @param   temp     Temperatura medida en grados Celsius.
   @param   hum      Humedad relativa medida en porcentaje.
  */
 void parser_getAlerta(char *buf, const type_rtcTime *hora, type_VentanaHor ventana, type_Estado estado, uint8_t temp, uint8_t hum) {
-	const char *ventana_str = (ventana == VENTANA_DIA) ? "diurno" : "nocturno";
+    const char *ventana_str = (ventana == VENTANA_DIA) ? "diurno" : "nocturno";
 
-	if (estado == ESTADO_ALERTA_TEMP) {
-		sprintf(buf, "[ALERTA] [%02u:%02u:%02u] Temperatura fuera de rango %s! Valor: %u C",
-		hora->hours, hora->minutes, hora->seconds,
-		ventana_str, temp);
-		} else if (estado == ESTADO_ALERTA_HUM) {
-		sprintf(buf, "[ALERTA] [%02u:%02u:%02u] Humedad fuera de rango %s! Valor: %u%%",
-		hora->hours, hora->minutes, hora->seconds,
-		ventana_str, hum);
-	}
+    if (estado == ESTADO_ALERTA_TEMP) {
+        sprintf(buf, "[ALERTA] [%02u:%02u:%02u] Temperatura fuera de rango %s! Valor: %u C",
+                hora->hours, hora->minutes, hora->seconds,
+                ventana_str, (unsigned int)temp);
+
+    } else if (estado == ESTADO_ALERTA_HUM) {
+        sprintf(buf, "[ALERTA] [%02u:%02u:%02u] Humedad fuera de rango %s! Valor: %u%%",
+                hora->hours, hora->minutes, hora->seconds,
+                ventana_str, (unsigned int)hum);
+
+    } else if (estado == ESTADO_ALERTA_TEMP_HUM) {
+        sprintf(buf, "[ALERTA] [%02u:%02u:%02u] Temp y Humedad fuera de rango %s! T: %u C H: %u%%",
+                hora->hours, hora->minutes, hora->seconds,
+                ventana_str, (unsigned int)temp, (unsigned int)hum);
+    }
 }
 
 

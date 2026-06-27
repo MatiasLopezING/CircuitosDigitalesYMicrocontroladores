@@ -14,12 +14,13 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "ds3231.h"
 
 /* Longitud maxima del buffer de telemetria: "[HH:MM:SS] T: XX C | H: XX% | Estado: NORMAL\r\n\0" */
 #define TELEMETRIA_LEN 50
 
-/* Longitud maxima del buffer de alerta: "[ALERTA] [HH:MM:SS] Temperatura fuera de rango nocturno! Valor: XX C\0" */
+/* Longitud maxima del buffer de alerta: "[ALERTA] [HH:MM:SS] Temp y Humedad fuera de rango nocturno! T: 35 C H: 90%\0" */
 #define ALERTA_LEN 80
 
 /* Tipo de comando recibido por la terminal. */
@@ -51,6 +52,7 @@ typedef enum {
 	ESTADO_NORMAL      = 0,  /* Temperatura y humedad dentro del rango */
 	ESTADO_ALERTA_TEMP,      /* Temperatura fuera de rango             */
 	ESTADO_ALERTA_HUM,       /* Humedad fuera de rango                 */
+	ESTADO_ALERTA_TEMP_HUM,  /* Temperatura y humedad fuera del rango */
 } type_Estado;
 
 /* Ventana horaria activa segun la hora del RTC. */
