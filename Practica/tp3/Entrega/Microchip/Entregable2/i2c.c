@@ -1,19 +1,10 @@
-/*
- * CFile1.c
- *
- * Created: 6/24/2026 12:49:18 AM
- *  Author: tomas
- */ 
-#include "i2c.h"
-#include <avr/io.h>
-#include <util/twi.h>
 
-// ---------------------------------------------------------------------------
-// Macro interna: espera a que el hardware TWI termine una operación
-// TWINT se pone en 1 cuando la operación terminó (se limpia escribiendo 1)
-// ---------------------------------------------------------------------------
+#include "i2c.h"
+
+
+/* Macro interna: espera a que el hardware TWI termine una operacion */
 #define TWI_WAIT()  while (!(TWCR & (1 << TWINT)))
-#define TWI_STATUS  (TWSR & 0xF8)   // máscara que quita los bits de prescaler
+#define TWI_STATUS  (TWSR & 0xF8)   // Mascara que quita los bits de prescaler
 
 void i2c_init(void) {
 	TWSR = 0x00;            // prescaler = 1
@@ -73,9 +64,6 @@ uint8_t i2c_read_nack(void) {
 	return TWDR;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers de alto nivel
-// ---------------------------------------------------------------------------
 
 // Escribe un registro: START ? addr+W ? reg ? data ? STOP
 uint8_t i2c_write_reg(uint8_t dev_addr, uint8_t reg, uint8_t data) {

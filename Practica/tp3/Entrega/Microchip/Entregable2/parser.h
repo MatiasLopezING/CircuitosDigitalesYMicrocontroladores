@@ -47,6 +47,7 @@ typedef enum {
 	VENTANA_DIA = 0,
 	VENTANA_NOCHE
 } type_VentanaHor;
+
 typedef enum {PARSER_OK,PARSER_CMD_INVALID,PARSER_FORMAT_INVALID,PARSER_RANGE_ERROR,} type_statusCmd;
 
 type_statusCmd parser_parsearCmd(const char *cmd, type_Cmd *tipo, type_Data *data);

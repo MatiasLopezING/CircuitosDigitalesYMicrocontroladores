@@ -1,9 +1,3 @@
-/*
- * Entregable2.c
- *
- * Created: 6/24/2026 12:37:30 AM
- * Author : tomas
- */ 
 
 #include "main.h"
 
@@ -20,38 +14,41 @@ static type_rtcTime horaNueva;
 
 int main(void)
 {
-	sei();
+	//Inicializacion
+	sei(); 
     uart_init();
 	timer_init();
 	i2c_init();
 	ds3231_init();
+	
     while (1) 
     {
+
+		terminal_consumirChars(); //Consumo los caracteres que coloca el usuario como comando
 		
-		
-		terminal_poll(); //Consumo los caracteres que coloca el usuario como comando
-		if (timer_pasoT()){ //Logica cada T segundos
+		//Logica cada T segundos
+		if (timer_pasoT()){ 
 
 			 if(ds3231_getTime(&hora)) {
 				 //dht11_readTempHum(&temp, &hum) Falta implementar
 				 type_VentanaHor ventana= parser_getVentana(&hora);
-				 type_Estado estado=parser_getEstado(ventana,17,70); //NORMAL o ALERTA
+				 type_Estado estado=parser_getEstado(ventana,19,100); //NORMAL o ALERTA
 				
 		
 				 if (estado != ESTADO_NORMAL) {
 					 contador_alertas++;
 					 
 					 if (contador_alertas % 3 == 0) {
-						parser_getAlerta(alerta, &hora, ventana, estado,17,70);
+						parser_getAlerta(alerta, &hora, ventana, estado,19,100);
 						terminal_enviarMensaje(alerta);
 					 }
 					 else {
-						 parser_getTelemetria(telemetria,&hora,17,70,estado);
+						 parser_getTelemetria(telemetria,&hora,19,100,estado);
 						 terminal_enviarMensaje(telemetria);
 					 }
 				} else {
 					 contador_alertas = 0;  // reset al volver a normal
-					 parser_getTelemetria(telemetria,&hora,17,70,estado);
+					 parser_getTelemetria(telemetria,&hora,19,100,estado);
 					 terminal_enviarMensaje(telemetria);
 				 }
 			 } else {
@@ -61,25 +58,28 @@ int main(void)
 			
 		}
 		
-		if (terminal_hayComando()) { //Procesar comando
+		//Procesar comando de entrada en caso de que haya
+		if (terminal_hayComando()) { 
+			
+			
 			terminal_getComando(comando);
-			//terminal_enviarMensaje(comando); //Muestro el texto que ingreso el usuario --> Este texto no llega a mostrarse 
-			//Opcion 1 -> Hacer que los mensajes se vayan como encolando cosa de enviar un unico mensaje
-			//Opcion 2 -> No mostrar el comando
-			estado = parser_parsearCmd(comando, &tipoCmd, &dataCmd);
 
-			switch (estado)
+			estado = parser_parsearCmd(comando, &tipoCmd, &dataCmd); //Recibo el estado del comando que el usuario ingreso , el tipo (Dependiendo si fue SET_T o SET_TIME) y la informacion necesaria segun el tipo de comando
+
+			switch (estado) //Segun el estado del comando realizo acciones 
 			 {
-				 case PARSER_OK:
+				 case PARSER_OK: //Comando valido
 
 				 switch (tipoCmd)
 				 {
 					 case CMD_SET_TIME:
 					 
-				
+					//Extraigo la informacion de la hora a actualizar en el DS3231
 					 horaNueva.hours=dataCmd.hora.hora;
 					 horaNueva.minutes=dataCmd.hora.minutos;
 					 horaNueva.seconds=dataCmd.hora.segundos;
+					
+					//Seteo nuevo tiempo
 					 ds3231_setTime(&horaNueva);
 
 					 terminal_enviarMensaje("Hora actualizada.");
@@ -87,6 +87,7 @@ int main(void)
 
 					 case CMD_SET_T:
 
+					//Seteo nuevo periodo T
 					 timer_setT(dataCmd.periodo.periodoT);
 
 					 terminal_enviarMensaje("Periodo actualizado.");
@@ -95,12 +96,12 @@ int main(void)
 
 				 break;
 
-				 case PARSER_CMD_INVALID:
+				 case PARSER_CMD_INVALID: //Comando inexistente, por lo tanto invalido
 
 				 terminal_enviarMensaje("ERROR: comando inexistente.");
 				 break;
 
-				 case PARSER_FORMAT_INVALID:
+				 case PARSER_FORMAT_INVALID: //Dentro de los comandos posibles, pero no con el formato deseado -> Decision de modelado del problema
 						 switch (tipoCmd)
 						 {
 							 case CMD_SET_TIME:
@@ -115,7 +116,7 @@ int main(void)
 
 				 break;
 
-				 case PARSER_RANGE_ERROR:
+				 case PARSER_RANGE_ERROR: //Comando con formato valido pero con variables que exceden los rangos establecidos 
 						 switch (tipoCmd)
 						 {
 							 case CMD_SET_TIME:

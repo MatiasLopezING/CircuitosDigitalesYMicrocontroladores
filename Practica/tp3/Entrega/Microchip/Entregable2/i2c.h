@@ -9,7 +9,8 @@
 #define I2C_H
 
 #include <stdint.h>
-
+#include <avr/io.h>
+#include <util/twi.h>
 // Frecuencia I2C: 100kHz con F_CPU = 16MHz
 // TWBR = ((F_CPU / F_SCL) - 16) / (2 * prescaler) = ((16000000/100000) - 16) / 2 = 72
 #define I2C_TWBR_100K   72
