@@ -21,6 +21,8 @@ int main(void)
 	i2c_init();
 	ds3231_init();
 	
+	uint8_t temp = 0, hum = 0;
+	terminal_enviarMensaje("Sistema Iniciado. Esperando lecturas del DHT11...\r\n");
     while (1) 
     {
 
@@ -30,25 +32,30 @@ int main(void)
 		if (timer_pasoT()){ 
 
 			 if(ds3231_getTime(&hora)) {
-				 //dht11_readTempHum(&temp, &hum) Falta implementar
+				 
+				 // Leemos el DHT11
+				 if (dht11_read(&temp, &hum) != DHT11_OK) {
+					 terminal_enviarMensaje("ERROR: Fallo lectura del DHT11\r\n");
+				 }
+
 				 type_VentanaHor ventana= parser_getVentana(&hora);
-				 type_Estado estado=parser_getEstado(ventana,19,100); //NORMAL o ALERTA
+				 type_Estado estado=parser_getEstado(ventana, temp, hum); //NORMAL o ALERTA
 				
 		
 				 if (estado != ESTADO_NORMAL) {
 					 contador_alertas++;
 					 
 					 if (contador_alertas % 3 == 0) {
-						parser_getAlerta(alerta, &hora, ventana, estado,19,100);
+						parser_getAlerta(alerta, &hora, ventana, estado, temp, hum);
 						terminal_enviarMensaje(alerta);
 					 }
 					 else {
-						 parser_getTelemetria(telemetria,&hora,19,100,estado);
+						 parser_getTelemetria(telemetria,&hora, temp, hum, estado);
 						 terminal_enviarMensaje(telemetria);
 					 }
 				} else {
 					 contador_alertas = 0;  // reset al volver a normal
-					 parser_getTelemetria(telemetria,&hora,19,100,estado);
+					 parser_getTelemetria(telemetria,&hora, temp, hum, estado);
 					 terminal_enviarMensaje(telemetria);
 				 }
 			 } else {
