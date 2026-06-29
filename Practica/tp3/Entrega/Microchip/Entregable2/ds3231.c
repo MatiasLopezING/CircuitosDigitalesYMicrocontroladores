@@ -5,11 +5,15 @@
 #include "ds3231.h"
 #include "i2c.h"
 
-/* Conversion decimal -> BCD (empacado). */
-static uint8_t dec2bcd(uint8_t val) { return ((val / 10) << 4) | (val % 10); }
+/* Conversion decimal -> BCD. */
+static uint8_t dec2bcd(uint8_t val) { 
+	return ((val / 10) << 4) | (val % 10); 
+}
 
-/* Conversion BCD (empacado) -> decimal. */
-static uint8_t bcd2dec(uint8_t val) { return ((val >> 4) * 10) + (val & 0x0F); }
+/* Conversion BCD  -> decimal. */
+static uint8_t bcd2dec(uint8_t val) { 
+	return ((val >> 4) * 10) + (val & 0x0F); 
+}
 
 /*
   @brief   Inicializa el DS3231 forzando el modo de 24 horas.
@@ -19,9 +23,9 @@ static uint8_t bcd2dec(uint8_t val) { return ((val >> 4) * 10) + (val & 0x0F); }
  */
 void ds3231_init(void) {
 	uint8_t hour_reg;
-	if (i2c_read_reg(DS3231_ADDR, DS3231_REG_HOUR, &hour_reg)) {
+	if (i2c_readReg(DS3231_ADDR, DS3231_REG_HOUR, &hour_reg)) {
 		hour_reg &= ~(1 << 6);  /* bit 6 = 0 -> modo 24 h */
-		i2c_write_reg(DS3231_ADDR, DS3231_REG_HOUR, hour_reg);
+		i2c_writeReg(DS3231_ADDR, DS3231_REG_HOUR, hour_reg);
 	}
 }
 
@@ -31,11 +35,11 @@ void ds3231_init(void) {
   Los valores BCD del chip se convierten a decimal antes de almacenarse.
 
   @param   t  Puntero a la estructura donde se escriben segundos, minutos y horas.
-  @return  1 si la lectura fue exitosa, 0 si hubo error de bus.
+  @return  1 si la lectura fue exitosa, 0 si hubo error .
  */
 uint8_t ds3231_getTime(type_rtcTime *t) {
 	uint8_t buf[3];
-	if (!i2c_read_burst(DS3231_ADDR, DS3231_REG_SEC, buf, 3))
+	if (!i2c_readBurst(DS3231_ADDR, DS3231_REG_SEC, buf, 3))
 	return 0;
 
 	t->seconds = bcd2dec(buf[0] & 0x7F);  // bit 7 es CH (clock halt), ignorar
@@ -47,18 +51,15 @@ uint8_t ds3231_getTime(type_rtcTime *t) {
 /*
   @brief   Escribe la hora en el DS3231 mediante una rafaga de 3 bytes.
 
-  Valida que los valores esten en rango antes de escribir.
   Secuencia: START -> SLA+W -> REG_SEC -> seg -> min -> horas -> STOP.
 
   @param   t  Puntero a la estructura con la hora a configurar.
-  @return  1 si la escritura fue exitosa, 0 si los valores estan fuera de rango o hubo error.
+  @return  1 si la escritura fue exitosa, 0 si hubo error.
  */
 uint8_t ds3231_setTime(const type_rtcTime *t) {
-	/* Validacion de rangos */
-	if (t->hours > 23 || t->minutes > 59 || t->seconds > 59)
-	return 0;
 
-	/* Escritura en rafaga: START -> addr -> reg_base -> seg -> min -> horas -> STOP */
+
+	/* Escritura en rafaga: START -> addr + W -> reg_base -> seg -> min -> horas -> STOP */
 	if (!i2c_start((DS3231_ADDR << 1) | 0)) return 0;
 	if (!i2c_write(DS3231_REG_SEC))         return 0;
 	if (!i2c_write(dec2bcd(t->seconds)))    return 0;

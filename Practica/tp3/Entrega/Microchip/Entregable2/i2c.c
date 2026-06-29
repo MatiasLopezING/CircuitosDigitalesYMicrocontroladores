@@ -1,6 +1,6 @@
 /**
  * @file    i2c.c
- * @brief   Implementacion del driver I2C (TWI) master bloqueante para ATmega328P.
+ * @brief   Implementacion del driver I2C (TWI).
  */
 #include "i2c.h"
 
@@ -15,7 +15,7 @@
  */
 void i2c_init(void) {
 	TWSR = 0x00;            /* prescaler = 1                */
-	TWBR = I2C_TWBR_100K;  /* velocidad 100 kHz            */
+	TWBR = 72;  /* Valor de TWBR para 100 kHz con F_CPU = 16 MHz y prescaler = 1. * Formula: TWBR = ((F_CPU / F_SCL) - 16) / (2 * prescaler) = 72 */
 	TWCR = (1 << TWEN);    /* habilita el periferico TWI   */
 }
 
@@ -30,16 +30,17 @@ uint8_t i2c_start(uint8_t addr_rw) {
 	// Generar START: limpiar TWINT, setear TWSTA, habilitar TWEN
 	TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
 	TWI_WAIT();
-
-	if (TWI_STATUS != TWI_START && TWI_STATUS != TWI_REP_START)
+	
+	uint8_t status = TWI_STATUS;
+	if (status != TWI_START && status != TWI_REP_START)
 	return 0;
 
-	// Enviar direcci�n + R/W
+	// Enviar direccion + R/W
 	TWDR = addr_rw;
 	TWCR = (1 << TWINT) | (1 << TWEN);
 	TWI_WAIT();
 
-	uint8_t status = TWI_STATUS;
+	status = TWI_STATUS;
 	if (status != TWI_MT_SLA_ACK && status != TWI_MR_SLA_ACK)
 	return 0;
 
@@ -51,7 +52,7 @@ uint8_t i2c_start(uint8_t addr_rw) {
  */
 void i2c_stop(void) {
 	TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
-	/* No se genera TWINT despues del STOP; esperar hasta que el hardware limpie TWSTO. */
+	/* No se genera TWINT despues del STOP, espero hasta que el hardware limpie TWSTO. */
 	while (TWCR & (1 << TWSTO));
 }
 
@@ -73,7 +74,7 @@ uint8_t i2c_write(uint8_t data) {
 
   @return  Byte leido del bus.
  */
-uint8_t i2c_read_ack(void) {
+uint8_t i2c_readAck(void) {
 	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
 	TWI_WAIT();
 	return TWDR;
@@ -84,7 +85,7 @@ uint8_t i2c_read_ack(void) {
 
   @return  Byte leido del bus.
  */
-uint8_t i2c_read_nack(void) {
+uint8_t i2c_readNack(void) {
 	TWCR = (1 << TWINT) | (1 << TWEN);
 	TWI_WAIT();
 	return TWDR;
@@ -99,7 +100,7 @@ uint8_t i2c_read_nack(void) {
   @param   data      Valor a escribir.
   @return  1 si la operacion fue exitosa, 0 si hubo error de bus.
  */
-uint8_t i2c_write_reg(uint8_t dev_addr, uint8_t reg, uint8_t data) {
+uint8_t i2c_writeReg(uint8_t dev_addr, uint8_t reg, uint8_t data) {
 	if (!i2c_start((dev_addr << 1) | 0)) return 0;  // SLA+W
 	if (!i2c_write(reg))                 return 0;
 	if (!i2c_write(data))                return 0;
@@ -115,11 +116,11 @@ uint8_t i2c_write_reg(uint8_t dev_addr, uint8_t reg, uint8_t data) {
   @param   data      Puntero donde se almacena el byte leido.
   @return  1 si la operacion fue exitosa, 0 si hubo error de bus.
  */
-uint8_t i2c_read_reg(uint8_t dev_addr, uint8_t reg, uint8_t *data) {
+uint8_t i2c_readReg(uint8_t dev_addr, uint8_t reg, uint8_t *data) {
 	if (!i2c_start((dev_addr << 1) | 0)) return 0;  // SLA+W
-	if (!i2c_write(reg))                 return 0;
+	if (!i2c_write(reg))  return 0;
 	if (!i2c_start((dev_addr << 1) | 1)) return 0;  // repeated START + SLA+R
-	*data = i2c_read_nack();                         // �nico byte ? NACK
+	*data = i2c_readNack();                         // unico byte -> NACK
 	i2c_stop();
 	return 1;
 }
@@ -135,15 +136,15 @@ uint8_t i2c_read_reg(uint8_t dev_addr, uint8_t reg, uint8_t *data) {
   @param   len       Cantidad de bytes a leer.
   @return  1 si la operacion fue exitosa, 0 si hubo error de bus.
  */
-uint8_t i2c_read_burst(uint8_t dev_addr, uint8_t reg, uint8_t *buf, uint8_t len) {
+uint8_t i2c_readBurst(uint8_t dev_addr, uint8_t reg, uint8_t *buf, uint8_t len) {
 	if (!i2c_start((dev_addr << 1) | 0)) return 0;
 	if (!i2c_write(reg))                 return 0;
 	if (!i2c_start((dev_addr << 1) | 1)) return 0;
 
 	for (uint8_t i = 0; i < len - 1; i++)
-	buf[i] = i2c_read_ack();   // ACK en todos menos el �ltimo
+	buf[i] = i2c_readAck();   // ACK en todos menos el ultimo
 
-	buf[len - 1] = i2c_read_nack(); // NACK en el �ltimo
+	buf[len - 1] = i2c_readNack(); // NACK en el ultimo
 	i2c_stop();
 	return 1;
 }

@@ -1,10 +1,4 @@
-/**
- * @file    uart.h
- * @brief   Interfaz del driver UART para ATmega328P a 16 MHz, 9600 bps 8N1.
- *
- * Expone buffers de TX (lineal) y RX (circular) gestionados por ISR.
- * El modulo superior (terminal) usa estas primitivas para armar y enviar mensajes.
- */
+
 
 #ifndef UART_H_
 #define UART_H_
@@ -20,7 +14,7 @@
 #define SIZE_BUFFERTX_MAX 78
 
 /* Tamano del buffer circular de recepcion (bytes).
- * Basado en el comando mas largo: "SET_TIME=HH:MM:SS\n" + 1 posicion libre para deteccion de OF. */
+ * Basado en el comando mas largo: "SET_TIME=HH:MM:SS\n" */
 #define SIZE_BUFFERRX_MAX 19
 
 void    uart_init(void);

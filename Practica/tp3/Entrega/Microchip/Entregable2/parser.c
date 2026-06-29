@@ -7,7 +7,7 @@
 /* Prototipos de funciones internas. */
 static type_statusCmd parser_setTime(const char *cmd, type_Data *data);
 static type_statusCmd parser_setPeriodo(const char *cmd, type_Data *data);
-static uint8_t        esDigito(char c);
+static uint8_t esDigito(char c);
 
 /*
   @brief   Parsea un comando recibido por la terminal y extrae tipo y datos.
@@ -20,7 +20,7 @@ static uint8_t        esDigito(char c);
   @param   data  Puntero donde se escriben los datos del comando (type_Data).
   @return  PARSER_OK              Si el comando es valido y los datos estan en rango.
   @return  PARSER_CMD_INVALID     Si el prefijo del comando no existe.
-  @return  PARSER_FORMAT_INVALID  Si el formato del valor es incorrecto.
+  @return  PARSER_FORMAT_INVALID  Si no cumple el formato establecido.
   @return  PARSER_RANGE_ERROR     Si el valor esta fuera del rango permitido.
  */
 type_statusCmd parser_parsearCmd(const char *cmd, type_Cmd *tipo, type_Data *data)
@@ -39,14 +39,14 @@ type_statusCmd parser_parsearCmd(const char *cmd, type_Cmd *tipo, type_Data *dat
 	if (strncmp(cmd, "SET_T=", 6) == 0)
 	{
 		*tipo = CMD_SET_T;
-		return parser_setPeriodo(&cmd[6], data);
+		return parser_setPeriodo(&cmd[6], data); 
 	}
 
 	return PARSER_CMD_INVALID;
 }
 	
 /*
-  @brief   Valida y extrae hora, minutos y segundos del subcomando SET_TIME.
+  @brief   Valida y extrae hora, minutos y segundos del comando SET_TIME.
 
   Espera exactamente 8 caracteres con formato "HH:MM:SS".
   Verifica que los separadores sean ':' y que los valores esten en rango.
@@ -61,7 +61,7 @@ static type_statusCmd parser_setTime(const char *cmd, type_Data *data)
     uint8_t minutos;
     uint8_t segundos;
 
-    /* Longitud exacta esperada: "HH:MM:SS" (8 chars, sin '\0') */
+  
  
     if (strlen(cmd) != 8) //Strlen no incluye el \0, por eso 8
         return PARSER_FORMAT_INVALID;

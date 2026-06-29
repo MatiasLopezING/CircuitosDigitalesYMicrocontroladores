@@ -1,12 +1,3 @@
-/**
- * @file    parser.h
- * @brief   Modulo de parseo de comandos y generacion de mensajes de telemetria/alerta.
- *
- * Define los tipos de comando (SET_TIME, SET_T), los estados del invernadero
- * (NORMAL, ALERTA_TEMP, ALERTA_HUM) y las ventanas horarias (DIA/NOCHE).
- * Expone funciones para parsear la entrada del usuario y armar los strings
- * de salida hacia la terminal.
- */
 
 #ifndef PARSER_H_
 #define PARSER_H_
@@ -49,16 +40,16 @@ typedef union {
 
 /* Estado actual del invernadero segun los umbrales de la ventana horaria. */
 typedef enum {
-	ESTADO_NORMAL      = 0,  /* Temperatura y humedad dentro del rango */
-	ESTADO_ALERTA_TEMP,      /* Temperatura fuera de rango             */
-	ESTADO_ALERTA_HUM,       /* Humedad fuera de rango                 */
+	ESTADO_NORMAL= 0,  /* Temperatura y humedad dentro del rango */
+	ESTADO_ALERTA_TEMP,      /* Temperatura fuera de rango*/
+	ESTADO_ALERTA_HUM,       /* Humedad fuera de rango  */
 	ESTADO_ALERTA_TEMP_HUM,  /* Temperatura y humedad fuera del rango */
 } type_Estado;
 
 /* Ventana horaria activa segun la hora del RTC. */
 typedef enum {
-	VENTANA_DIA   = 0,  /* 07:00 - 18:59 */
-	VENTANA_NOCHE,      /* 19:00 - 06:59 */
+	VENTANA_DIA=0,  /* 07:00 - 18:59 */
+	VENTANA_NOCHE,  /* 19:00 - 06:59 */
 } type_VentanaHor;
 
 /* Resultado del parseo de un comando. */

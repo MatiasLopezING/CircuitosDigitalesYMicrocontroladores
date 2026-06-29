@@ -9,17 +9,17 @@
  */
 #include "main.h"
 
-static volatile bool flag_T, flag_comando;  /* Flags de sincronizacion ISR -> main      */
-static volatile uint8_t T;                  /* Periodo de reporte en segundos (2-60)    */
-static char           comando[SIZE_COMANDO_MAX]; /* Buffer del comando en curso          */
-static type_Cmd       tipoCmd;              /* Tipo del ultimo comando parseado          */
-static type_Data      dataCmd;              /* Datos del ultimo comando parseado         */
-static type_statusCmd estado;               /* Resultado del parseo del comando          */
-static type_rtcTime   hora;                 /* Hora actual leida del DS3231             */
-static char           telemetria[TELEMETRIA_LEN]; /* Buffer de mensaje de telemetria    */
-static char           alerta[ALERTA_LEN];         /* Buffer de mensaje de alerta        */
-static uint8_t        contador_alertas = 0; /* Cuenta alertas consecutivas (alerta cada 3) */
-static type_rtcTime   horaNueva;            /* Nueva hora a escribir en el DS3231        */
+static volatile bool flag_T, flag_comando;  /* Flags de sincronizacion ISR -> main  */
+static volatile uint8_t T; /* Periodo de reporte en segundos (2-60)*/
+static char comando[SIZE_COMANDO_MAX]; /* Buffer del comando en curso*/
+static type_Cmd tipoCmd;/* Tipo del ultimo comando parseado*/
+static type_Data dataCmd; /* Datos del ultimo comando parseado */
+static type_statusCmd estado;/* Resultado del parseo del comando */
+static type_rtcTime   hora; /* Hora actual leida del DS3231 */
+static char telemetria[TELEMETRIA_LEN]; /* Buffer de mensaje de telemetria    */
+static char alerta[ALERTA_LEN];  /* Buffer de mensaje de alerta        */
+static uint8_t contador_alertas = 0; /* Variable para generar alerta cada 2 telemetrias */
+static type_rtcTime horaNueva;  /* Nueva hora a escribir en el DS3231 para el comando SET_TIME=HH:MM:SS */
 
 int main(void)
 {
@@ -47,11 +47,11 @@ int main(void)
 					 terminal_enviarMensaje("ERROR: Fallo lectura del DHT11\r\n");
 				 }
 
-				 type_VentanaHor ventana= parser_getVentana(&hora);
-				 type_Estado estado=parser_getEstado(ventana, temp, hum); //NORMAL o ALERTA
+				 type_VentanaHor ventana= parser_getVentana(&hora); //Ventana horaria, diurna o nocturna
+				 type_Estado estado=parser_getEstado(ventana, temp, hum); //Obtenemos el estado dependiendo si se escedieron los rangos o no
 				
 		
-				 if (estado != ESTADO_NORMAL) {
+				 if (estado != ESTADO_NORMAL) { //Logica para caso de alerta 
 					 contador_alertas++;
 					 
 					 if (contador_alertas % 3 == 0) {

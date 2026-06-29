@@ -1,0 +1,2 @@
+Aclaracion: 
+-Puede suceder que un aviso de "Comando no existente" o "Fuera de rango", etc se pise con alguna telemetria si se le da a enter justo en el momento en que se estaba enviendo la telemetria. Esto es porque no esperamos a que se termine de enviar todo el mensaje que estaba en el buffer. Tomamos esta decision porque de esperar tendriamos que hacer que sea bloqueante esa espera de envio de mensaje y no queriamos agregar mas operaciones bloqueantes de las que ya habia.
