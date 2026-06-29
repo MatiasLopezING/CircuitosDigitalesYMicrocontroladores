@@ -14,6 +14,9 @@ static char comando_listo[SIZE_COMANDO_MAX];
 static uint8_t pos=0;
 /* Flag que indica que hay un comando completo pendiente de procesar. */
 static bool comando_Pendiente=false;
+/* Flag de descarte: activo cuando el comando supero SIZE_COMANDO_MAX.
+ * Mientras este activo se ignoran todos los chars hasta el proximo \r o \n. */
+static bool descartando=false;
 
 
 /*
@@ -26,18 +29,22 @@ static bool comando_Pendiente=false;
   @param   mensaje     Puntero a string terminado en '\0' a transmitir.
  */
 void terminal_enviarMensaje(const char * mensaje) {
-	
+
+	/* Detener la ISR de TX antes de limpiar el buffer para evitar la condicion
+	 * de carrera en la que la ISR lee datos viejos o parciales mientras se carga
+	 * el nuevo mensaje. uart_setUDRIE0() al final reinicia la transmision. */
+	UCSR0B &= ~(1 << UDRIE0);
 	uart_limpiarBuffer();
-	
+
 	uint8_t i=0;
 	while (mensaje[i] != '\0' && i < SIZE_BUFFERTX_MAX - 3) {
 		uart_cargarByteBuffer(mensaje[i++]);
 	}
-	
+
 	uart_cargarByteBuffer('\r'); //Carriage return
 	uart_cargarByteBuffer('\n'); //Salto de linea
 	uart_cargarByteBuffer('\0'); //Finalizacion de cadena
-	
+
 	uart_setUDRIE0(); //Habilito interrupcion por UDR de Transmision empty
 
 }
@@ -62,32 +69,46 @@ void terminal_consumirChars() {
 	if (uart_huboOV()) {
 		uart_resetearRx();
 		pos = 0;
-		terminal_enviarMensaje("ERROR: overflow. Vuelva a ingresar comandos");
+		descartando = false;
+		terminal_enviarMensaje("ERROR: overflow RX. Vuelva a ingresar el comando.");
 		return;
 	}
 
 	while (uart_leerByteBuffer(&c))
 	{
-		
-
 		if (c == '\n' || c == '\r')
 		{
+			if (descartando) {
+				/* Fin del comando largo que se estaba descartando.
+				 * Volver a estado limpio sin generar otro error. */
+				descartando = false;
+				pos = 0;
+			} else if (pos > 0) {
+				/* Comando completo: copiar y avisar al main. */
 				comando[pos] = '\0';
-				strlcpy(comando_listo, comando,SIZE_COMANDO_MAX);
+				strlcpy(comando_listo, comando, SIZE_COMANDO_MAX);
 				comando_Pendiente = true;
 				pos = 0;
-		}
-		else 
-			if (pos < SIZE_COMANDO_MAX - 1) {
-				comando[pos++] = c;
-				}
-			else
-			{
-				uart_resetearRx();
-				pos = 0;
-				terminal_enviarMensaje("ERROR: Comando demasiado largo. Ingrese uno valido.");
 			}
-		
+			/* Si pos==0 y no descartando: terminador extra (\r\n doble), ignorar. */
+		}
+		else if (descartando)
+		{
+			/* Caracter perteneciente al comando demasiado largo: descartar. */
+		}
+		else if (pos < SIZE_COMANDO_MAX - 1)
+		{
+			comando[pos++] = c;
+		}
+		else
+		{
+			/* Se supero el largo maximo: activar descarte y notificar una sola vez.
+			 * No se llama uart_resetearRx() para no perder chars de otros comandos
+			 * que pudieran estar en el buffer; se descartan en el mismo while loop. */
+			descartando = true;
+			pos = 0;
+			terminal_enviarMensaje("ERROR: Comando demasiado largo. Ingrese uno valido.");
+		}
 	}
 }
 

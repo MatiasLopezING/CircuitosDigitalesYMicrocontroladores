@@ -30,6 +30,9 @@ type_statusCmd parser_parsearCmd(const char *cmd, type_Cmd *tipo, type_Data *dat
 	while (*cmd == ' ')
 		cmd++;
 
+	/* Verificar primero la forma completa (con '=' y valor).
+	 * El orden importa: SET_TIME= debe ir antes que SET_T= porque SET_T es prefijo de SET_TIME. */
+
 	if (strncmp(cmd, "SET_TIME=", 9) == 0)
 	{
 		*tipo = CMD_SET_TIME;
@@ -39,7 +42,23 @@ type_statusCmd parser_parsearCmd(const char *cmd, type_Cmd *tipo, type_Data *dat
 	if (strncmp(cmd, "SET_T=", 6) == 0)
 	{
 		*tipo = CMD_SET_T;
-		return parser_setPeriodo(&cmd[6], data); 
+		return parser_setPeriodo(&cmd[6], data);
+	}
+
+	/* Comando reconocido pero sin '=' o sin valor: retornar FORMAT_INVALID
+	 * en lugar de CMD_INVALID para dar un mensaje de error mas descriptivo.
+	 * SET_TIME debe verificarse antes que SET_T para el mismo motivo de orden. */
+
+	if (strncmp(cmd, "SET_TIME", 8) == 0)
+	{
+		*tipo = CMD_SET_TIME;
+		return PARSER_FORMAT_INVALID;
+	}
+
+	if (strncmp(cmd, "SET_T", 5) == 0)
+	{
+		*tipo = CMD_SET_T;
+		return PARSER_FORMAT_INVALID;
 	}
 
 	return PARSER_CMD_INVALID;
@@ -107,34 +126,38 @@ static type_statusCmd parser_setTime(const char *cmd, type_Data *data)
 /*
   @brief   Valida y extrae el periodo T del subcomando SET_T.
 
-  Acepta 1 o 2 digitos decimales. Verifica que el valor este entre 2 y 60.
+  Acepta cualquier cantidad de digitos decimales. Da FORMAT_INVALID si no hay
+  digitos o si algun caracter no es numerico. Da RANGE_ERROR si el valor
+  esta fuera del rango permitido [2, 60], independientemente de cuantos digitos tenga.
 
   @param   cmd   Puntero al string posterior a "SET_T=" (terminado en '\0').
   @param   data  Puntero donde se escribe el periodo extraido.
-  @return  PARSER_OK / PARSER_FORMAT_INVALID / PARSER_RANGE_ERROR.
+  @return  PARSER_OK              Valor valido y en rango.
+  @return  PARSER_FORMAT_INVALID  Cadena vacia o contiene caracteres no numericos.
+  @return  PARSER_RANGE_ERROR     Valor numerico fuera del rango [2, 60].
  */
 static type_statusCmd parser_setPeriodo(const char *cmd, type_Data *data)
 {
 	uint16_t T = 0;
-	uint8_t i, len = strlen(cmd);
-	
-	if (len == 0 || len > 2)  //Debe existir al menos un digito y no puede haber mas de 2 digitos asi como tampoco otros caracteres -> Decision de modelado, despues de ingresar SET_T=T se debe darle a enter
+	uint8_t i;
+
+	/* Debe haber al menos un digito */
+	if (cmd[0] == '\0')
 		return PARSER_FORMAT_INVALID;
 
-	for (i=0 ; cmd[i] != '\0' ; i++) //Proceso hasta el fin de la cadena lo que el usuario haya ingresado como T, podria ser 1 o 2 chars como maximo
+	for (i = 0; cmd[i] != '\0'; i++)
 	{
 		if (!esDigito(cmd[i]))
-		return PARSER_FORMAT_INVALID;
+			return PARSER_FORMAT_INVALID;
 
-		T *= 10;
-		T += cmd[i]-'0';
+		T = T * 10 + (uint16_t)(cmd[i] - '0');
 	}
 
+	/* Verificar rango: 2 a 60 segundos */
 	if (T < 2 || T > 60)
 		return PARSER_RANGE_ERROR;
 
 	data->periodo.periodoT = T;
-
 	return PARSER_OK;
 }
 
