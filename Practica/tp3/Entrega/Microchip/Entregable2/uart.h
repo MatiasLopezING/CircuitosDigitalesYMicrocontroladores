@@ -24,5 +24,6 @@ void    uart_cargarByteBuffer(const char c);
 bool    uart_leerByteBuffer(char *c);
 void    uart_resetearRx(void);
 bool    uart_huboOV(void);
+bool    uart_hayDatosRx(void);
 
 #endif /* UART_H_ */

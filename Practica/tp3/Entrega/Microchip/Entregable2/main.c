@@ -2,15 +2,18 @@
  * @file    main.c
  * @brief   Monitor de invernadero TP3 - Punto de entrada y bucle principal.
  *
- * Arquitectura foreground/background:
- *   - Background (main while): consume comandos UART, lee sensores cada T segundos
- *     y envia telemetria o alertas segun el estado del invernadero.
- *   - Foreground (ISRs): Timer1 (tick 10 ms), USART RX (recepcion), USART UDRE (TX).
+ * Arquitectura foreground/background estricta:
+ *   - Foreground (ISRs): cada ISR hace el minimo trabajo posible, solo activa su flag.
+ *       TIMER1_COMPA_vect : activa flag_10ms cada 10 ms (en timer.c).
+ *       USART_RX_vect     : almacena byte en buffer circular y activa flag_RX (en uart.c).
+ *       USART_UDRE_vect   : transmite el proximo byte del buffer TX (en uart.c).
+ *   - Background (main while): 3 ifs, uno por fuente de evento:
+ *       1. uart_hayDatosRx()     -> terminal_consumirChars(): construye comandos desde RX.
+ *       2. timer_pasoT()         -> lee DHT11 + DS3231, envia telemetria o alerta cada T seg.
+ *       3. terminal_hayComando() -> parsea y ejecuta el comando recibido.
  */
 #include "main.h"
 
-static volatile bool flag_T, flag_comando;  /* Flags de sincronizacion ISR -> main  */
-static volatile uint8_t T; /* Periodo de reporte en segundos (2-60)*/
 static char comando[SIZE_COMANDO_MAX]; /* Buffer del comando en curso*/
 static type_Cmd tipoCmd;/* Tipo del ultimo comando parseado*/
 static type_Data dataCmd; /* Datos del ultimo comando parseado */
@@ -32,12 +35,14 @@ int main(void)
 	
 	uint8_t temp = 0, hum = 0;
 	terminal_enviarMensaje("Sistema Iniciado. Esperando lecturas del DHT11...\r\n");
-    while (1) 
+    while (1)
     {
+		/* IF 1: ISR de RX notifico que llego al menos un byte -> armar comando */
+		if (uart_hayDatosRx()) {
+			terminal_consumirChars();
+		}
 
-		terminal_consumirChars(); //Consumo los caracteres que coloca el usuario como comando
-		
-		//Logica cada T segundos
+		/* IF 2: Transcurrio el periodo T -> leer sensores y reportar */
 		if (timer_pasoT()){ 
 
 			 if(ds3231_getTime(&hora)) {
@@ -74,8 +79,8 @@ int main(void)
 			
 		}
 		
-		//Procesar comando de entrada en caso de que haya
-		if (terminal_hayComando()) { 
+		/* IF 3: terminal armo un comando completo -> parsearlo y ejecutarlo */
+		if (terminal_hayComando()) {
 			
 			
 			terminal_getComando(comando);

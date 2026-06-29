@@ -2,40 +2,45 @@
  * @file    timer.c
  * @brief   Driver de temporizacion para el ATmega328P a 16 MHz.
  *
- * Utiliza Timer1 en modo CTC para generar una interrupcion cada 10 ms (100 Hz).
- * A partir de los ticks acumulados se detecta el vencimiento del periodo T,
- * configurable entre 2 y 60 segundos.
+ * Utiliza Timer1 en modo CTC con prescaler 1024 y OCR1A = 15624,
+ * generando una interrupcion exactamente cada 1 segundo (1 Hz).
+ *
+ * F_interrupcion = F_CPU / (Prescaler * (OCR1A + 1))
+ *               = 16.000.000 / (1024 * 15625) = 1 Hz
+ *
+ * Arquitectura foreground/background estricta:
+ *   - Foreground (ISR): solo activa flag_1s cada 1 segundo.
+ *   - Background (timer_pasoT): cuenta los ticks de 1 s y determina si transcurrio T.
  */
 
 #include "timer.h"
-/* Periodo T en segundos. Rango valido: 2 a 60. */
-static uint8_t T=2;
-/* Contador de ticks de 10ms transcurridos desde el ultimo evento T. */
-static uint16_t ticks=0;
-/* Cantidad de ticks necesarios para completar el periodo T (T * 100). */
-static uint16_t ticks_T=200;
-/* Flag que indica que transcurrio un periodo T completo. */
-static bool flag_T=false;
+
+/* Activada por la ISR cada 1 segundo. Consumida y limpiada por timer_pasoT() en background. */
+static volatile bool flag_1s = false;
+
+/* Las siguientes variables solo se acceden desde el background (timer_pasoT / timer_setT),
+ * por lo tanto no necesitan ser volatile. */
+static uint8_t T     = 2;  /* Periodo T en segundos. Rango valido: 2-60. */
+static uint8_t ticks = 0;  /* Ticks de 1 s acumulados desde el ultimo evento T. */
 
 /*
  @brief Inicializa el Timer1 en modo CTC con interrupcion cada 10ms.
 
  */
-void timer_init(void) //Utilizamos timer1
+void timer_init(void)
 {
-	//F_interrupcion = F_CPU / (Prescaler * (OCR1A + 1))
-	//Buscamos interrupcion cada 10 ms, es decir F_interrupcion=100Hz por lo que con Prescaler=64 y OCR1A=2499 obtenemos 10 ms
-    // Modo CTC (TOP = OCR1A)
+    /* Modo CTC (TOP = OCR1A) */
     TCCR1A = 0;
-	
     TCCR1B = (1 << WGM12);
-    // Prescaler = 64
-	
-    TCCR1B |= (1 << CS11) | (1 << CS10);
-    // 10 ms exactos
-	
-    OCR1A = 2499;
-    // Habilitar interrupcion compare A
+
+    /* Prescaler = 1024: CS12=1, CS11=0, CS10=1 */
+    TCCR1B |= (1 << CS12) | (1 << CS10);
+
+    /* OCR1A = 15624 → interrupcion exactamente cada 1 segundo
+     * 16.000.000 / (1024 * (15624 + 1)) = 1 Hz */
+    OCR1A = 15624;
+
+    /* Habilitar interrupcion compare A */
     TIMSK1 = (1 << OCIE1A);
 }
 /*
@@ -44,37 +49,38 @@ void timer_init(void) //Utilizamos timer1
  @param Tnuevo  Nuevo periodo en segundos. Rango valido: 2 a 60.
  */
 void timer_setT(uint8_t Tnuevo) {
-	T=Tnuevo;
-	ticks_T=T*100;
-	ticks=0;
+	T     = Tnuevo;
+	ticks = 0;       /* reiniciar conteo al cambiar el periodo */
 }
 
 /*
-@brief Indica si transcurrio un periodo T completo.
+  @brief Indica si transcurrio un periodo T completo.
 
-@return true   Si transcurrio el periodo T desde la ultima consulta.
-@return false  Si todavia no transcurrio el periodo T.
+  Debe llamarse en el background (while principal). Consume el flag_1s
+  activado por la ISR y cuenta los segundos transcurridos.
+  Retorna true una sola vez por cada periodo T completado.
+
+  @return true   Si transcurrieron T segundos desde la ultima vez que retorno true.
+  @return false  Si no hubo tick de 1 s todavia, o aun no se completo el periodo T.
 */
-
-bool timer_pasoT() {
-
-	if (!flag_T) return false;
-
-	flag_T = false;
-	return true;
+bool timer_pasoT(void) {
+	if (!flag_1s) return false;
+	flag_1s = false;        /* consumir el tick de 1 segundo */
+	if (++ticks >= T) {
+		ticks = 0;
+		return true;
+	}
+	return false;
 }
 
 /*
-  @brief   ISR del Timer1 (TIMER1_COMPA_vect), se ejecuta cada 10 ms.
+  @brief   ISR del Timer1 (TIMER1_COMPA_vect), se ejecuta cada 1 segundo.
 
-  Incrementa el contador de ticks y activa flag_T cuando se completa
-  el periodo T configurado.
+  Unicamente activa flag_1s. Todo el conteo de segundos y la logica de
+  periodo T se realiza en el background (timer_pasoT), respetando la
+  arquitectura foreground/background estricta: el ISR hace el minimo
+  trabajo posible.
  */
 ISR(TIMER1_COMPA_vect) {
-	
-	if (++ticks==ticks_T) { 
-		flag_T=true;
-		ticks=0;
-	}
-	
+	flag_1s = true;
 }

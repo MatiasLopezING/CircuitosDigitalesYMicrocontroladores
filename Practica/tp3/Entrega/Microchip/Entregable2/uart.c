@@ -30,7 +30,12 @@ static volatile char bufferRx[SIZE_BUFFERRX_MAX];
 static volatile uint8_t headTx = 0, tailTx = 0, headRx = 0, tailRx = 0;
 
 /* Flag de overflow del buffer RX. Se activa cuando la ISR no puede almacenar un byte. */
-static bool flag_OF = false;
+static volatile bool flag_OF = false;
+
+/* Flag que indica que la ISR de RX recibio al menos un byte nuevo.
+ * Activada por USART_RX_vect (foreground). Consumida por uart_hayDatosRx()
+ * en el background para evitar polling incondicional del main. */
+static volatile bool flag_RX = false;
 
 /*
   @brief   Inicializa el periferico USART0 a 9600 bps, trama 8N1.
@@ -109,13 +114,29 @@ void uart_resetearRx()
 
 /*
   @brief Indica si ocurrio un overflow en el buffer de recepcion.
-  El overflow se produce cuando la ISR no puede almacenar un byte porque el buffer est� lleno.
- 
-  @return True Si hubo overflow 
+  El overflow se produce cuando la ISR no puede almacenar un byte porque el buffer esta lleno.
+
+  @return True Si hubo overflow
   @return False en caso contrario.
  */
-bool uart_huboOV(){
+bool uart_huboOV(void) {
 	return flag_OF;
+}
+
+/*
+  @brief Indica si la ISR de RX recibio al menos un byte desde la ultima consulta.
+
+  Permite al background evitar el polling incondicional: el main solo llama a
+  terminal_consumirChars() cuando esta funcion retorna true, respetando la
+  arquitectura foreground/background estricta.
+
+  @return true  Si hay datos nuevos en el buffer RX (o hubo overflow pendiente).
+  @return false Si no hubo actividad desde la ultima consulta.
+ */
+bool uart_hayDatosRx(void) {
+	if (!flag_RX) return false;
+	flag_RX = false;
+	return true;
 }
 
  
@@ -129,20 +150,20 @@ bool uart_huboOV(){
 ISR(USART_RX_vect) {
 
 	char c = UDR0;
-	
-	uint8_t siguiente; 
-	
-	if (!flag_OF) { //No hago ninguna validacion si estoy en estado de overflow
-		siguiente=headRx + 1;
+	uint8_t siguiente;
 
-		if (siguiente == SIZE_BUFFERRX_MAX) //Ya esta el buffer lleno, debo volver al principio
-			siguiente=0;
-		if (siguiente != tailRx) { // Si la siguiente posicion a escribir no se leyo aun, entonces no almaceno.
-			bufferRx[headRx] = c;  //Almaceno char 	
-			headRx=siguiente;
-		} else 
-			flag_OF=true; //No puedo cargar mas chars -> Overflow
-	
+	flag_RX = true;   /* notificar al background que hay actividad en RX */
+
+	if (!flag_OF) {
+		siguiente = headRx + 1;
+		if (siguiente == SIZE_BUFFERRX_MAX)
+			siguiente = 0;
+		if (siguiente != tailRx) {
+			bufferRx[headRx] = c;
+			headRx = siguiente;
+		} else {
+			flag_OF = true;   /* buffer lleno -> overflow */
+		}
 	}
 }
 
