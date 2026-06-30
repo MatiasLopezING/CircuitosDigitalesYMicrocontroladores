@@ -4,8 +4,8 @@
  *
  * Arquitectura foreground/background estricta:
  *   - Foreground (ISRs): cada ISR hace el minimo trabajo posible, solo activa su flag.
- *       TIMER1_COMPA_vect : activa flag_10ms cada 10 ms (en timer.c).
- *       USART_RX_vect     : almacena byte en buffer circular y activa flag_RX (en uart.c).
+ *       TIMER1_COMPA_vect : activa flag_1s cada 1 s (en timer.c).
+ *       USART_RX_vect     : almacena byte en buffer y activa flag_RX (en uart.c).
  *       USART_UDRE_vect   : transmite el proximo byte del buffer TX (en uart.c).
  *   - Background (main while): 3 ifs, uno por fuente de evento:
  *       1. uart_hayDatosRx()     -> terminal_consumirChars(): construye comandos desde RX.
@@ -37,12 +37,12 @@ int main(void)
 	terminal_enviarMensaje("Sistema Iniciado. Esperando lecturas del DHT11...\r\n");
     while (1)
     {
-		/* IF 1: ISR de RX notifico que llego al menos un byte -> armar comando */
+		/* ISR de RX notifico que llego al menos un byte  */
 		if (uart_hayDatosRx()) {
 			terminal_consumirChars();
 		}
 
-		/* IF 2: Transcurrio el periodo T -> leer sensores y reportar */
+		/* Transcurrio el periodo T -> leer sensores y reportar */
 		if (timer_pasoT()){ 
 
 			 if(ds3231_getTime(&hora)) {
@@ -79,7 +79,7 @@ int main(void)
 			
 		}
 		
-		/* IF 3: terminal armo un comando completo -> parsearlo y ejecutarlo */
+		/* terminal armo un comando completo -> parsearlo y ejecutarlo */
 		if (terminal_hayComando()) {
 			
 			

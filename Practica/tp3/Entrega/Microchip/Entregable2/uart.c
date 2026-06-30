@@ -20,6 +20,10 @@ static char bufferTx[SIZE_BUFFERTX_MAX];
  */
 static volatile char bufferRx[SIZE_BUFFERRX_MAX];
 
+/* Variable para saber el caso inicial en que no se haya transmitido nada y no quedar bloqueado esperando TX */
+static bool huboTx = false;
+
+
 /*
   Indices de los buffers:
     headTx: proxima posicion libre para escribir en TX (foreground).
@@ -34,7 +38,7 @@ static volatile bool flag_OF = false;
 
 /* Flag que indica que la ISR de RX recibio al menos un byte nuevo.
  * Activada por USART_RX_vect (foreground). Consumida por uart_hayDatosRx()
- * en el background para evitar polling incondicional del main. */
+ * en el background para evitar polling  del main. */
 static volatile bool flag_RX = false;
 
 /*
@@ -48,13 +52,14 @@ void uart_init(void) {
 	UBRR0=103;
 	UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0)  ; 
 	UCSR0C = (1 << UCSZ01) | (1 << UCSZ00); 
-	
+	UCSR0A |= (1 << TXC0); // Limpiar TXC0 para que uart_txCompleto() retorne true la primera vez
 }
 
 /*
   @brief Habilita la interrupcion UDRIE0 para iniciar la transmision.
  */
 void uart_setUDRIE0() {
+	huboTx=true; //Para la primera TX
 	UCSR0B |= ( 1<<UDRIE0); 
 }
 
@@ -144,7 +149,7 @@ bool uart_hayDatosRx(void) {
   @brief   ISR de recepcion UART (USART_RX_vect).
 
   Se ejecuta cada vez que llega un byte completo al registro UDR0.
-  Almacena el byte en el buffer circular bufferRx.
+  Almacena el byte en el buffer bufferRx.
   Si el buffer esta lleno activa flag_OF y descarta el byte.
  */
 ISR(USART_RX_vect) {
@@ -165,6 +170,25 @@ ISR(USART_RX_vect) {
 			flag_OF = true;   /* buffer lleno -> overflow */
 		}
 	}
+}
+/*
+  @brief   Indica si la cadena en curso termino de transmitirse completamente.
+
+  Verifica dos condiciones en orden:
+    1. UDRIE0 apagado: la ISR USART_UDRE_vect ya no tiene bytes pendientes en bufferTx.
+    2. TXC0 seteado:   el shift register termino de enviar el ultimo byte por el cable.
+  Si ambas se cumplen, limpia TXC0 (escribiendo 1) y retorna true.
+
+  @return  true  Si toda la cadena salio completamente por el cable.
+  @return  false Si la ISR todavia transmite o el shift register no vacio el ultimo byte.
+ */
+
+bool uart_txCompleto(void) {
+	if (!huboTx) return true; // Nunca se transmitio nada, no hay nada que esperar
+	if (UCSR0B & (1 << UDRIE0)) return false; // ISR todavia transmitiendo
+	if (!(UCSR0A & (1 << TXC0))) return false; // Shift register todavia vaciando ultimo byte
+	UCSR0A = (1 << TXC0);                     // Limpiar flag (se limpia escribiendo 1)
+	return true;
 }
 
 /*

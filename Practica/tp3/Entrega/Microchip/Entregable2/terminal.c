@@ -29,7 +29,8 @@ static bool descartando=false;
   @param   mensaje     Puntero a string terminado en '\0' a transmitir.
  */
 void terminal_enviarMensaje(const char * mensaje) {
-
+	
+	 while (!uart_txCompleto());  // Esto es para que no se pisen 2 mensajes que envio a la terminal, el tiempo es despreciable frente a T por eso hago el while.
 	/* Detener la ISR de TX antes de limpiar el buffer para evitar la condicion
 	 * de carrera en la que la ISR lee datos viejos o parciales mientras se carga
 	 * el nuevo mensaje. uart_setUDRIE0() al final reinicia la transmision. */
