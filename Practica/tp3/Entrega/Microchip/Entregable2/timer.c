@@ -8,23 +8,23 @@
  * F_interrupcion = F_CPU / (Prescaler * (OCR1A + 1))
  *               = 16.000.000 / (1024 * 15625) = 1 Hz
  *
- * Arquitectura foreground/background estricta:
+ * Arquitectura foreground/background:
  *   - Foreground (ISR): solo activa flag_1s cada 1 segundo.
  *   - Background (timer_pasoT): cuenta los ticks de 1 s y determina si transcurrio T.
  */
 
 #include "timer.h"
 
-/* Activada por la ISR cada 1 segundo. Consumida y limpiada por timer_pasoT() en background. */
+/* Activada por la ISR cada 1 segundo. Consumida y limpiada por timer_pasoT() */
 static volatile bool flag_1s = false;
 
-/* Las siguientes variables solo se acceden desde el background (timer_pasoT / timer_setT),
- * por lo tanto no necesitan ser volatile. */
+/* Las siguientes variables solo se acceden desde el background (Con timer_pasoT o timer_setT),
+  por lo tanto no necesitan ser volatile. */
 static uint8_t T     = 2;  /* Periodo T en segundos. Rango valido: 2-60. */
 static uint8_t ticks = 0;  /* Ticks de 1 s acumulados desde el ultimo evento T. */
 
 /*
- @brief Inicializa el Timer1 en modo CTC con interrupcion cada 10ms.
+ @brief Inicializa el Timer1 en modo CTC con interrupcion cada 1s.
 
  */
 void timer_init(void)
@@ -77,7 +77,7 @@ bool timer_pasoT(void) {
   @brief   ISR del Timer1 (TIMER1_COMPA_vect), se ejecuta cada 1 segundo.
 
   Unicamente activa flag_1s. Todo el conteo de segundos y la logica de
-  periodo T se realiza en el background (timer_pasoT), respetando la
+  periodo T se realiza en timer_pasoT, respetando la
   arquitectura foreground/background estricta: el ISR hace el minimo
   trabajo posible.
  */
