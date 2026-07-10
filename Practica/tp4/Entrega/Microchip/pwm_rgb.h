@@ -34,4 +34,9 @@ void PWM_RGB_FijarIntensidad(uint8_t nivel);
  * Llamar desde la ISR del timer base (frecuencia ~ 30*256 Hz o mayor). */
 void PWM_RGB_PasoSoftware(void);
 
+/* Configura la base de tiempo (Timer0 CTC a 16 kHz) que genera el PWM
+ * por software de PB5 y, dividida por 16, el tick de 1 ms (bandera_ms).
+ * Llamar desde PWM_RGB_Inicializar(). */
+void PWM_RGB_BaseTiempoInit(void);
+
 #endif /* PWM_RGB_H */

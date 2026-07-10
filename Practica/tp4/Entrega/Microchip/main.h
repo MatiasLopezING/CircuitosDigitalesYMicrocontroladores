@@ -31,4 +31,8 @@
 #include "adc.h"
 #include "fade.h"
 
+/* Bandera de tick de 1 ms. Se DEFINE en main.c y la setea la ISR de
+ * Timer0 (en pwm_rgb.c). Declarada extern aca para el resto de modulos. */
+extern volatile uint8_t bandera_ms;
+
 #endif /* MAIN_H */
