@@ -104,10 +104,7 @@ void terminal_consumirChars() {
 		}
 		else
 		{
-			/* Se supero el largo maximo: activar descarte y notificar una sola vez.
-			 * No se llama uart_resetearRx() para no perder chars de otros comandos
-			 * que pudieran estar en el buffer; se descartan en el mismo while loop. */
-			descartando = true;
+			/* Se supero el largo maximo: mostrar error, reiniciar buffer y seguir acumulando. */
 			pos = 0;
 			terminal_enviarMensaje("ERROR: Comando demasiado largo. Ingrese uno valido.");
 		}

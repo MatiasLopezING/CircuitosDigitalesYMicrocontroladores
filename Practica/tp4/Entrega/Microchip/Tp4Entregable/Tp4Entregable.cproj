@@ -126,13 +126,16 @@
     <Compile Include="adc.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="efecto.c">
+    <Compile Include="led_rgb.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="efecto.h">
+    <Compile Include="led_rgb.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="parser.c">
@@ -153,10 +156,22 @@
     <Compile Include="pwm_sw.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="rampa.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rampa.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="terminal.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="terminal.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="timer_tick.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="timer_tick.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="uart.c">
